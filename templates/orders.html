@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Lịch Sử Mua Hàng - Melody Store{% endblock %}
+
+{% block content %}
+<div style="max-width: 950px; margin: 0 auto;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📦</span> Lịch Sử Mua Hàng Của Bạn
+            </h1>
+            <p style="color: #64748b; font-size: 0.9rem;">Theo dõi chi tiết các đơn hàng, tình trạng giao hàng và lịch sử mua sắm nhạc cụ</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="openQuickOrdersModal()">👁 Xem nhanh popup</button>
+            <a href="/" class="btn btn-primary">➕ Tiếp tục mua sắm</a>
+        </div>
+    </div>
+
+    <!-- Status filter chips -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;" id="orderFilterTabs">
+        <button class="btn btn-sm btn-primary order-filter-btn" data-status="all" onclick="filterCustomerOrders('all', this)">Tất cả đơn</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="pending" onclick="filterCustomerOrders('pending', this)">⏳ Mới đặt</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="processing" onclick="filterCustomerOrders('processing', this)">⚙ Đã xử lý</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="delivered" onclick="filterCustomerOrders('delivered', this)">🚚 Đã giao</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="cancelled" onclick="filterCustomerOrders('cancelled', this)">✖ Đã hủy</button>
+    </div>
+
+    <!-- Orders list container -->
+    <div id="customerOrdersList">
+        <div style="text-align: center; padding: 3rem; color: #64748b;">Đang tải danh sách đơn hàng...</div>
+    </div>
+</div>
+
+<!-- Modal Chi Tiết Hóa Đơn Khách Hàng -->
+<div id="customerOrderDetailModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a;">Hóa Đơn Chi Tiết: #<span id="custModalOrderCode"></span></h3>
+            <button class="modal-close" onclick="closeCustomerOrderDetailModal()">&times;</button>
+        </div>
+        <div id="custModalOrderBody">
+            <!-- Rendered by JS -->
+        </div>
+        <div style="text-align: right; margin-top: 1.5rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeCustomerOrderDetailModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function closeCustomerOrderDetailModal() {
+        const m = document.getElementById('customerOrderDetailModal');
+        if (m) m.style.display = 'none';
+    }
+</script>
+{% endblock %}

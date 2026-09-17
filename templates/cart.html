@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Giỏ Hàng - Melody Store{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Giỏ Hàng Của Bạn</h1>
+    <p style="color: #64748b; font-size: 0.9rem;">Quản lý và kiểm tra các nhạc cụ bạn đã chọn trước khi tiến hành thanh toán</p>
+</div>
+
+<!-- Empty state -->
+<div id="cartEmptyState" style="display: none; text-align: center; padding: 4rem 2rem; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div style="font-size: 3.5rem; margin-bottom: 1rem;">🛒</div>
+    <h3 style="color: #0f172a; margin-bottom: 0.5rem;">Giỏ hàng của bạn đang trống</h3>
+    <p style="color: #64748b; margin-bottom: 1.5rem;">Hãy khám phá các mẫu nhạc cụ tuyệt vời tại Melody Store!</p>
+    <a href="/" class="btn btn-primary">Khám phá nhạc cụ ngay</a>
+</div>
+
+<!-- Content layout -->
+<div id="cartContentLayout" class="cart-layout" style="display: none;">
+    <!-- Items table -->
+    <div class="cart-table-card">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Đơn giá</th>
+                    <th>Số lượng</th>
+                    <th>Thành tiền</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="cartTableBody">
+                <!-- Loaded dynamically -->
+            </tbody>
+        </table>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <a href="/" class="btn btn-secondary">&larr; Tiếp tục chọn sản phẩm</a>
+        </div>
+    </div>
+
+    <!-- Summary & Proceed to Checkout -->
+    <div class="summary-card">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem;">Tóm tắt đơn hàng</h3>
+        
+        <div class="summary-row">
+            <span style="color: #64748b;">Tạm tính:</span>
+            <span id="cartSubtotal" style="font-weight: 600;">0 ₫</span>
+        </div>
+
+        <div class="summary-row">
+            <span style="color: #64748b;">Phí vận chuyển:</span>
+            <span style="color: #16a34a; font-weight: 600;">Miễn phí toàn quốc</span>
+        </div>
+
+        <div class="summary-row total">
+            <span>Tổng cộng:</span>
+            <span id="cartTotal">0 ₫</span>
+        </div>
+
+        <a href="/checkout" class="btn-checkout">
+            Tiến hành đặt hàng &rarr;
+        </a>
+
+        <div style="margin-top: 1rem; font-size: 0.8rem; color: #64748b; text-align: center;">
+            🔒 Thanh toán an toàn & bảo mật tuyệt đối
+        </div>
+    </div>
+</div>
+{% endblock %}

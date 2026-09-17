@@ -1,0 +1,128 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Quản Lý Nhập Hàng - Melody Store Admin{% endblock %}
+{% block page_title %}Quản Lý Nhập Kho Sản Phẩm{% endblock %}
+
+{% block content %}
+<!-- Filter & Search Toolbar -->
+<div class="toolbar-card">
+    <div class="filter-group">
+        <div class="form-group">
+            <label for="filterImportCode">Mã phiếu nhập</label>
+            <input type="text" id="filterImportCode" class="form-control" placeholder="PN-..." oninput="loadAdminImports()">
+        </div>
+        <div class="form-group">
+            <label for="filterImportStatus">Trạng thái</label>
+            <select id="filterImportStatus" class="form-control" onchange="loadAdminImports()">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="draft">Bản nháp (Sửa được)</option>
+                <option value="completed">Đã hoàn thành (Đã cộng kho)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="filterImportFromDate">Từ ngày</label>
+            <input type="date" id="filterImportFromDate" class="form-control" onchange="loadAdminImports()">
+        </div>
+        <div class="form-group">
+            <label for="filterImportToDate">Đến ngày</label>
+            <input type="date" id="filterImportToDate" class="form-control" onchange="loadAdminImports()">
+        </div>
+    </div>
+    <div>
+        <button class="btn btn-primary" onclick="openAddImportModal()">➕ Tạo Phiếu Nhập Hàng Mới</button>
+    </div>
+</div>
+
+<div class="alert-banner alert-info">
+    <span>ℹ️</span>
+    <span><strong>Quy định nghiệp vụ:</strong> Phiếu nhập hàng mới tạo sẽ ở trạng thái <em>Bản nháp</em> (cho phép tự do sửa và xóa). Chỉ khi bấm <strong>Hoàn thành</strong>, hệ thống mới cập nhật giá vốn và cộng dồn số lượng vào tồn kho, sau đó khóa phiếu không cho sửa nữa.</span>
+</div>
+
+<!-- Import Receipts Table -->
+<div class="table-card">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Mã phiếu</th>
+                <th>Ngày nhập</th>
+                <th>Quy mô nhập</th>
+                <th>Tổng tiền nhập</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="importsTableBody">
+            <!-- Rendered by static/js/admin.js -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Add / Edit Import Modal -->
+<div id="importModal" class="admin-modal-overlay">
+    <div class="admin-modal" style="max-width: 800px;">
+        <div class="admin-modal-header">
+            <h3 id="importModalTitle" style="font-size: 1.15rem; font-weight: 700;">Thêm Phiếu Nhập Hàng</h3>
+            <button class="modal-close" onclick="closeAdminModal('importModal')">&times;</button>
+        </div>
+        <form onsubmit="submitImportForm(event)">
+            <input type="hidden" id="importId">
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                    <label for="importDateInput">Ngày nhập hàng (*)</label>
+                    <input type="date" id="importDateInput" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="importNotesInput">Ghi chú phiếu nhập</label>
+                    <input type="text" id="importNotesInput" class="form-control" placeholder="Ghi chú đợt nhập hàng, lô sản phẩm...">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <label style="font-weight: 700; font-size: 0.9rem; color: #0f172a;">Danh sách sản phẩm nhập kho:</label>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="addImportItemRow()">➕ Thêm dòng sản phẩm</button>
+            </div>
+
+            <!-- Dynamic items container -->
+            <div id="importItemsContainer" style="max-height: 280px; overflow-y: auto; padding-right: 0.25rem; margin-bottom: 1rem;">
+                <!-- Rows injected via JS -->
+            </div>
+
+            <div style="text-align: right; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid #fef3c7; font-size: 1.15rem; font-weight: 800; color: #b45309;">
+                Tổng giá trị phiếu nhập: <span id="importGrandTotalDisplay">0 ₫</span>
+            </div>
+
+            <div class="admin-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAdminModal('importModal')">Hủy bỏ</button>
+                <button type="submit" class="btn btn-primary">Lưu Phiếu Nhập (Bản nháp)</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Import Detail Modal -->
+<div id="importDetailModal" class="admin-modal-overlay">
+    <div class="admin-modal" style="max-width: 750px;">
+        <div class="admin-modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 700;">Chi Tiết Phiếu Nhập Hàng</h3>
+            <button class="modal-close" onclick="closeAdminModal('importDetailModal')">&times;</button>
+        </div>
+        <div id="importDetailBody">
+            <!-- Content loaded via JS -->
+        </div>
+        <div class="admin-modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAdminModal('importDetailModal')">Đóng</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadProductsForImportDropdown();
+        loadAdminImports();
+    });
+</script>
+{% endblock %}
