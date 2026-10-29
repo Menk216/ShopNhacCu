@@ -10,6 +10,12 @@ function formatVND(amount) {
 function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
+        const s = String(dateStr).trim();
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) {
+            const [_, y, mo, d, h, mi] = m;
+            return `${d}/${mo}/${y} ${h}:${mi}`;
+        }
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
         return d.toLocaleDateString('vi-VN', {
@@ -27,6 +33,12 @@ function formatDate(dateStr) {
 function formatDateOnly(dateStr) {
     if (!dateStr) return '';
     try {
+        const s = String(dateStr).trim();
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+            const [_, y, mo, d] = m;
+            return `${d}/${mo}/${y}`;
+        }
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
         return d.toLocaleDateString('vi-VN', {

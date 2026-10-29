@@ -205,8 +205,8 @@ def api_register():
     password_hash = generate_password_hash(password)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO users (username, password_hash, full_name, email, phone, address, role, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'customer', 'active')
+        INSERT INTO users (username, password_hash, full_name, email, phone, address, role, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'customer', 'active', datetime('now', 'localtime'))
     ''', (username, password_hash, full_name, email, phone, address))
     user_id = cursor.lastrowid
     conn.commit()
@@ -473,7 +473,7 @@ def api_cart_add():
     if existing:
         conn.execute("UPDATE cart_items SET quantity = ? WHERE id = ?", (new_qty, existing['id']))
     else:
-        conn.execute("INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)", (g.user['id'], product_id, quantity))
+        conn.execute("INSERT INTO cart_items (user_id, product_id, quantity, created_at) VALUES (?, ?, ?, datetime('now', 'localtime'))", (g.user['id'], product_id, quantity))
 
     conn.commit()
 
@@ -592,8 +592,8 @@ def api_checkout():
 
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+        INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', 'localtime'))
     ''', (order_code, g.user['id'], recipient_name, recipient_phone, recipient_address, payment_method, payment_status, total_amount, notes))
     order_id = cursor.lastrowid
 
@@ -798,8 +798,8 @@ def api_admin_create_admin():
     password_hash = generate_password_hash(password)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO users (username, password_hash, full_name, email, phone, role, status)
-        VALUES (?, ?, ?, ?, ?, 'admin', 'active')
+        INSERT INTO users (username, password_hash, full_name, email, phone, role, status, created_at)
+        VALUES (?, ?, ?, ?, ?, 'admin', 'active', datetime('now', 'localtime'))
     ''', (username, password_hash, full_name, email, phone))
     conn.commit()
     conn.close()
@@ -918,8 +918,8 @@ def api_admin_categories():
 
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO categories (code, name, description, status, profit_margin_percent)
-        VALUES (?, ?, ?, 'active', ?)
+        INSERT INTO categories (code, name, description, status, profit_margin_percent, created_at)
+        VALUES (?, ?, ?, 'active', ?, datetime('now', 'localtime'))
     ''', (code, name, description, profit_margin))
     cat_id = cursor.lastrowid
     conn.commit()
@@ -1046,8 +1046,8 @@ def api_admin_products():
 
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO products (category_id, code, name, image_url, description, cost_price, profit_margin_percent, status, stock_quantity)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0)
+        INSERT INTO products (category_id, code, name, image_url, description, cost_price, profit_margin_percent, status, stock_quantity, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, datetime('now', 'localtime'))
     ''', (category_id, code, name, image_url, description, cost_price, profit_margin))
     new_id = cursor.lastrowid
     conn.commit()
@@ -1197,8 +1197,8 @@ def api_admin_imports():
 
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO import_receipts (receipt_code, import_date, status, total_cost, notes)
-        VALUES (?, ?, 'draft', ?, ?)
+        INSERT INTO import_receipts (receipt_code, import_date, status, total_cost, notes, created_at)
+        VALUES (?, ?, 'draft', ?, ?, datetime('now', 'localtime'))
     ''', (receipt_code, import_date, total_cost, notes))
     receipt_id = cursor.lastrowid
 
