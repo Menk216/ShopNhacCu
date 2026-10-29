@@ -7,16 +7,16 @@
 <!-- Role Tabs & Action Toolbar -->
 <div class="toolbar-card">
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <button class="btn btn-sm btn-primary user-role-btn" onclick="switchRoleFilter('all', this)">👥 Tất cả</button>
-        <button class="btn btn-sm btn-secondary user-role-btn" onclick="switchRoleFilter('customer', this)">🛒 Khách hàng</button>
-        <button class="btn btn-sm btn-secondary user-role-btn" onclick="switchRoleFilter('admin', this)">👑 Quản trị viên (Admin)</button>
+        <button class="btn btn-sm btn-primary user-role-btn" onclick="switchRoleFilter('all', this)">Tất cả</button>
+        <button class="btn btn-sm btn-secondary user-role-btn" onclick="switchRoleFilter('customer', this)">Khách hàng</button>
+        <button class="btn btn-sm btn-secondary user-role-btn" onclick="switchRoleFilter('admin', this)">Quản trị viên (Admin)</button>
     </div>
 
     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
         <div class="form-group" style="min-width: 250px;">
             <input type="text" id="searchUserInput" class="form-control" placeholder="Tìm tên đăng nhập, họ tên, SĐT..." oninput="loadAdminUsers()">
         </div>
-        <button class="btn btn-primary" onclick="openAddAdminModal()">➕ Thêm Tài Khoản Admin</button>
+        <button class="btn btn-primary" onclick="openAddAdminModal()">Thêm Tài Khoản Admin</button>
     </div>
 </div>
 
@@ -45,7 +45,7 @@
 <div id="addAdminModal" class="admin-modal-overlay">
     <div class="admin-modal" style="max-width: 520px;">
         <div class="admin-modal-header">
-            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">➕ Thêm Tài Khoản Quản Trị Viên (Admin)</h3>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">Thêm Tài Khoản Quản Trị Viên (Admin)</h3>
             <button class="modal-close" onclick="closeAdminModal('addAdminModal')">&times;</button>
         </div>
         <form onsubmit="submitCreateAdmin(event)">

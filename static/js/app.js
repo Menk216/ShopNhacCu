@@ -195,7 +195,7 @@ function renderProductCard(p) {
                 <div class="product-price-row">
                     <span class="product-price">${formatVND(p.selling_price)}</span>
                     <button class="btn-add-cart" onclick="handleAddToCart(${p.id}, 1)" ${isOutOfStock ? 'disabled' : ''}>
-                        <span>🛒</span> ${isOutOfStock ? 'Hết hàng' : 'Thêm giỏ'}
+                        ${isOutOfStock ? 'Hết hàng' : 'Thêm giỏ'}
                     </button>
                 </div>
             </div>
@@ -298,7 +298,7 @@ async function loadCartPage() {
                 </td>
                 <td style="font-weight: 700; color: #b45309;">${formatVND(item.subtotal)}</td>
                 <td>
-                    <button class="btn-remove-item" onclick="removeCartItem(${item.cart_item_id})" title="Xóa">🗑</button>
+                    <button class="btn-remove-item" onclick="removeCartItem(${item.cart_item_id})" title="Xóa">&times;</button>
                 </td>
             </tr>
         `).join('');
@@ -489,7 +489,7 @@ function renderFilteredCustomerOrders() {
     if (ordersToDisplay.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding: 3rem; background:#fff; border-radius:12px; border:1px dashed #cbd5e1;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem;">📦</div>
+                
                 <h3 style="color:#0f172a; margin-bottom:0.5rem;">Không tìm thấy đơn hàng nào ${currentOrderFilter !== 'all' ? 'ở trạng thái này' : ''}</h3>
                 <p style="color:#64748b; font-size:0.95rem; margin-bottom:1.5rem;">Khám phá các mẫu nhạc cụ tuyệt vời tại Melody Store!</p>
                 <a href="/" class="btn btn-primary">Khám phá nhạc cụ ngay</a>
@@ -499,10 +499,10 @@ function renderFilteredCustomerOrders() {
     }
 
     const statusLabels = {
-        'pending': { label: '⏳ Mới đặt', class: 'badge pending' },
-        'processing': { label: '⚙ Đã xử lý', class: 'badge processing' },
-        'delivered': { label: '🚚 Đã giao hàng', class: 'badge delivered' },
-        'cancelled': { label: '✖ Đã hủy', class: 'badge cancelled' }
+        'pending': { label: 'Mới đặt', class: 'badge pending' },
+        'processing': { label: 'Đã xử lý', class: 'badge processing' },
+        'delivered': { label: 'Đã giao hàng', class: 'badge delivered' },
+        'cancelled': { label: 'Đã hủy', class: 'badge cancelled' }
     };
 
     const paymentLabels = {
@@ -526,7 +526,7 @@ function renderFilteredCustomerOrders() {
                     <div>
                         <span style="font-weight:800; font-size:1.1rem; color:#0f172a;">Đơn hàng: #${o.order_code}</span>
                         <span style="color:#64748b; font-size:0.85rem; margin-left:1rem;">
-                            📅 Ngày đặt: ${formatDate(o.created_at)}
+                            Ngày đặt: ${formatDate(o.created_at)}
                         </span>
                     </div>
                     <div>
@@ -551,7 +551,7 @@ function renderFilteredCustomerOrders() {
                     </div>
                 ` : `
                     <div style="background:#fef2f2; border:1px solid #fee2e2; border-radius:6px; padding:0.5rem 1rem; color:#991b1b; font-size:0.85rem; margin-bottom:1rem;">
-                        ⚠️ Đơn hàng này đã bị hủy.
+                        Đơn hàng này đã bị hủy.
                     </div>
                 `}
 
@@ -597,8 +597,8 @@ function renderFilteredCustomerOrders() {
                             <span style="font-size:1.35rem; font-weight:800; color:#b45309;">${formatVND(o.total_amount)}</span>
                         </div>
                         <div style="display:flex; gap:0.5rem;">
-                            <button class="btn btn-sm btn-secondary" onclick="viewCustomerOrderDetail('${o.order_code}')">👁 Chi tiết hóa đơn</button>
-                            <button class="btn btn-sm btn-primary" onclick="reorderCustomerItems(${o.id})">🔄 Mua lại đơn này</button>
+                            <button class="btn btn-sm btn-secondary" onclick="viewCustomerOrderDetail('${o.order_code}')">Chi tiết hóa đơn</button>
+                            <button class="btn btn-sm btn-primary" onclick="reorderCustomerItems(${o.id})">Mua lại đơn này</button>
                         </div>
                     </div>
                 </div>
@@ -621,10 +621,10 @@ async function viewCustomerOrderDetail(orderCode) {
         };
 
         const statusLabels = {
-            'pending': '⏳ Mới đặt',
-            'processing': '⚙ Đã xử lý',
-            'delivered': '🚚 Đã giao hàng',
-            'cancelled': '✖ Đã hủy'
+            'pending': 'Mới đặt',
+            'processing': 'Đã xử lý',
+            'delivered': 'Đã giao hàng',
+            'cancelled': 'Đã hủy'
         };
 
         document.getElementById('custModalOrderBody').innerHTML = `
