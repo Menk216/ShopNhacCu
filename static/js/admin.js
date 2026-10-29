@@ -636,7 +636,9 @@ function calculateImportTotal() {
 function openAddImportModal(preselectedProductId = null) {
     document.getElementById('importModalTitle').textContent = 'Thêm Phiếu Nhập Hàng (Bản nháp)';
     document.getElementById('importId').value = '';
-    document.getElementById('importDateInput').value = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    document.getElementById('importDateInput').value = localDateStr;
     document.getElementById('importNotesInput').value = '';
     document.getElementById('importItemsContainer').innerHTML = '';
     if (preselectedProductId) {

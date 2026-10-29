@@ -26,7 +26,7 @@ def init_db():
             address TEXT,
             role TEXT NOT NULL DEFAULT 'customer',
             status TEXT NOT NULL DEFAULT 'active',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT (datetime('now', 'localtime'))
         );
     ''')
 
@@ -39,7 +39,7 @@ def init_db():
             description TEXT,
             status TEXT NOT NULL DEFAULT 'active',
             profit_margin_percent REAL NOT NULL DEFAULT 20.0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT (datetime('now', 'localtime'))
         );
     ''')
 
@@ -56,7 +56,7 @@ def init_db():
             profit_margin_percent REAL,
             status TEXT NOT NULL DEFAULT 'active',
             stock_quantity INTEGER NOT NULL DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (category_id) REFERENCES categories (id)
         );
     ''')
@@ -70,7 +70,7 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'draft',
             total_cost REAL NOT NULL DEFAULT 0.0,
             notes TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT (datetime('now', 'localtime'))
         );
     ''')
 
@@ -102,7 +102,7 @@ def init_db():
             order_status TEXT NOT NULL DEFAULT 'pending',
             total_amount REAL NOT NULL,
             notes TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (user_id) REFERENCES users (id)
         );
     ''')
@@ -129,7 +129,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
             quantity INTEGER NOT NULL DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
             UNIQUE(user_id, product_id),
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
