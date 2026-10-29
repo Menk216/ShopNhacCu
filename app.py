@@ -196,6 +196,19 @@ def api_register():
     if not username or not password or not full_name:
         return jsonify({'success': False, 'message': 'Vui lòng nhập đầy đủ tên đăng nhập, mật khẩu và họ tên'}), 400
 
+    if len(username) < 2:
+        return jsonify({'success': False, 'message': 'Tên đăng nhập phải có ít nhất 2 ký tự'}), 400
+
+    if len(full_name) < 2:
+        return jsonify({'success': False, 'message': 'Họ và tên phải có ít nhất 2 ký tự'}), 400
+
+    if len(password) < 6:
+        return jsonify({'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}), 400
+
+    import re
+    if not phone or not re.match(r'^[0-9]{10}$', phone):
+        return jsonify({'success': False, 'message': 'Số điện thoại phải gồm đúng 10 chữ số và không được chứa chữ'}), 400
+
     conn = database.get_db_connection()
     existing = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
     if existing:
@@ -281,7 +294,19 @@ def api_profile():
         conn.close()
         return jsonify({'success': False, 'message': 'Họ và tên không được để trống'}), 400
 
+    if len(full_name) < 2:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Họ và tên phải có ít nhất 2 ký tự'}), 400
+
+    import re
+    if phone and not re.match(r'^[0-9]{10}$', phone):
+        conn.close()
+        return jsonify({'success': False, 'message': 'Số điện thoại phải gồm đúng 10 chữ số và không được chứa chữ'}), 400
+
     if new_password:
+        if len(new_password) < 6:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Mật khẩu mới phải có ít nhất 6 ký tự'}), 400
         curr = conn.execute("SELECT password_hash FROM users WHERE id = ?", (g.user['id'],)).fetchone()
         if not old_password or not check_password_hash(curr['password_hash'], old_password):
             conn.close()

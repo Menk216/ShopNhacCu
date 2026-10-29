@@ -35,17 +35,20 @@
         <form id="customerRegisterForm" style="display: none;">
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regUsername">Tên đăng nhập (*)</label>
-                <input type="text" id="regUsername" class="form-control" placeholder="Chọn tên đăng nhập" required>
+                <input type="text" id="regUsername" class="form-control" placeholder="Tối thiểu 2 ký tự" required minlength="2">
+                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 2 ký tự</small>
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regPassword">Mật khẩu (*)</label>
-                <input type="password" id="regPassword" class="form-control" placeholder="Mật khẩu ít nhất 6 ký tự" required>
+                <input type="password" id="regPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 6 ký tự</small>
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regFullName">Họ và tên (*)</label>
-                <input type="text" id="regFullName" class="form-control" placeholder="Ví dụ: Trần Văn Nam" required>
+                <input type="text" id="regFullName" class="form-control" placeholder="Ví dụ: Trần Văn Nam" required minlength="2">
+                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 2 ký tự</small>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
@@ -54,8 +57,9 @@
                     <input type="email" id="regEmail" class="form-control" placeholder="email@gmail.com">
                 </div>
                 <div class="form-group">
-                    <label for="regPhone">Số điện thoại</label>
-                    <input type="text" id="regPhone" class="form-control" placeholder="0901234567">
+                    <label for="regPhone">Số điện thoại (*)</label>
+                    <input type="text" id="regPhone" class="form-control" placeholder="10 số (VD: 0901234567)" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                    <small style="color: #64748b; font-size: 0.78rem;">Đúng 10 số, không chứa chữ</small>
                 </div>
             </div>
 
@@ -125,13 +129,44 @@
     // Handle Register
     document.getElementById('customerRegisterForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        const fullName = document.getElementById('regFullName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const address = document.getElementById('regAddress').value.trim();
+
+        if (username.length < 2) {
+            showToast('Tên đăng nhập phải có ít nhất 2 ký tự', 'error');
+            document.getElementById('regUsername').focus();
+            return;
+        }
+
+        if (fullName.length < 2) {
+            showToast('Họ và tên phải có ít nhất 2 ký tự', 'error');
+            document.getElementById('regFullName').focus();
+            return;
+        }
+
+        if (password.length < 6) {
+            showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
+            document.getElementById('regPassword').focus();
+            return;
+        }
+
+        if (!/^[0-9]{10}$/.test(phone)) {
+            showToast('Số điện thoại phải gồm đúng 10 chữ số và không được chứa chữ', 'error');
+            document.getElementById('regPhone').focus();
+            return;
+        }
+
         const payload = {
-            username: document.getElementById('regUsername').value.trim(),
-            password: document.getElementById('regPassword').value.trim(),
-            full_name: document.getElementById('regFullName').value.trim(),
-            email: document.getElementById('regEmail').value.trim(),
-            phone: document.getElementById('regPhone').value.trim(),
-            address: document.getElementById('regAddress').value.trim()
+            username: username,
+            password: password,
+            full_name: fullName,
+            email: email,
+            phone: phone,
+            address: address
         };
 
         try {
