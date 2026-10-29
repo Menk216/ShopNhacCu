@@ -828,6 +828,9 @@ def api_admin_reset_user_password(user_id):
 @app.route('/api/admin/users/<int:user_id>/toggle-lock', methods=['POST'])
 @admin_required
 def api_admin_toggle_user_lock(user_id):
+    if user_id == 1:
+        return jsonify({'success': False, 'message': 'Không được phép khóa tài khoản Quản trị viên tối cao (ID: 1)!'}), 400
+
     if user_id == g.admin['id']:
         return jsonify({'success': False, 'message': 'Bạn không thể tự khóa tài khoản Admin đang đăng nhập của chính mình!'}), 400
 
@@ -844,6 +847,41 @@ def api_admin_toggle_user_lock(user_id):
 
     action_text = 'khóa' if new_status == 'locked' else 'mở khóa'
     return jsonify({'success': True, 'message': f'Đã {action_text} tài khoản "{user["username"]}" thành công', 'new_status': new_status})
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_user(user_id):
+    if user_id == 1:
+        return jsonify({'success': False, 'message': 'Không được phép xóa tài khoản Quản trị viên tối cao (ID: 1)!'}), 400
+
+    if user_id == g.admin['id']:
+        return jsonify({'success': False, 'message': 'Bạn không thể xóa tài khoản Admin đang đăng nhập của chính mình!'}), 400
+
+    conn = database.get_db_connection()
+    user = conn.execute("SELECT id, username, role FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Không tìm thấy tài khoản người dùng'}), 404
+
+    if user['role'] != 'customer':
+        conn.close()
+        return jsonify({'success': False, 'message': 'Chỉ cho phép xóa tài khoản Khách hàng!'}), 400
+
+    try:
+        # Xóa giỏ hàng liên quan
+        conn.execute("DELETE FROM cart_items WHERE user_id = ?", (user_id,))
+        # Xóa chi tiết đơn hàng và đơn hàng liên quan
+        conn.execute("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)", (user_id,))
+        conn.execute("DELETE FROM orders WHERE user_id = ?", (user_id,))
+        # Xóa người dùng
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': f'Đã xóa vĩnh viễn tài khoản khách hàng "{user["username"]}" thành công!'})
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'success': False, 'message': f'Lỗi khi xóa tài khoản: {str(e)}'}), 500
 
 # --- 3. Category Management ---
 

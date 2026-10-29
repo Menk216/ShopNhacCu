@@ -51,16 +51,19 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    let icon = '✔';
-    if (type === 'error') icon = '✖';
-    if (type === 'warning') icon = '⚠';
+    let iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 6L9 17l-5-5"/></svg>';
+    if (type === 'error') {
+        iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    } else if (type === 'warning') {
+        iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    }
 
     toast.innerHTML = `
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-            <strong>${icon}</strong>
+        <div style="display:flex; align-items:center; gap:0.65rem;">
+            ${iconSvg}
             <span>${message}</span>
         </div>
-        <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#94a3b8;">&times;</button>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1.3rem; line-height:1; color:#94a3b8; padding:0 0 0 0.75rem; margin-left:auto;" title="Đóng">&times;</button>
     `;
 
     container.appendChild(toast);

@@ -12,34 +12,33 @@
     <!-- Admin Sidebar Navigation -->
     <aside class="admin-sidebar">
         <div class="sidebar-header">
-            <span style="font-size: 1.6rem; color: #d97706;">🎹</span>
             <a href="/admin/dashboard" class="sidebar-brand">MELODY <span>ADMIN</span></a>
         </div>
 
         <nav class="sidebar-nav">
             <a href="/admin/dashboard" class="nav-item-admin {% if request.path == '/admin' or request.path == '/admin/dashboard' %}active{% endif %}">
-                <span>📊</span> <span>Tổng quan</span>
+                <span>Tổng quan</span>
             </a>
             <a href="/admin/users" class="nav-item-admin {% if '/admin/users' in request.path %}active{% endif %}">
-                <span>👥</span> <span>Quản lý Khách hàng</span>
+                <span>Quản lý Khách hàng</span>
             </a>
             <a href="/admin/categories" class="nav-item-admin {% if '/admin/categories' in request.path %}active{% endif %}">
-                <span>📁</span> <span>Quản lý Loại sản phẩm</span>
+                <span>Quản lý Loại sản phẩm</span>
             </a>
             <a href="/admin/products" class="nav-item-admin {% if '/admin/products' in request.path %}active{% endif %}">
-                <span>🎸</span> <span>Quản lý Sản phẩm</span>
+                <span>Quản lý Sản phẩm</span>
             </a>
             <a href="/admin/imports" class="nav-item-admin {% if '/admin/imports' in request.path %}active{% endif %}">
-                <span>📥</span> <span>Quản lý Nhập hàng</span>
+                <span>Quản lý Nhập hàng</span>
             </a>
             <a href="/admin/pricing" class="nav-item-admin {% if '/admin/pricing' in request.path %}active{% endif %}">
-                <span>💰</span> <span>Quản lý Giá bán & % Lãi</span>
+                <span>Quản lý Giá bán & % Lãi</span>
             </a>
             <a href="/admin/orders" class="nav-item-admin {% if '/admin/orders' in request.path %}active{% endif %}">
-                <span>📦</span> <span>Quản lý Đơn đặt hàng</span>
+                <span>Quản lý Đơn đặt hàng</span>
             </a>
             <a href="/admin/inventory" class="nav-item-admin {% if '/admin/inventory' in request.path %}active{% endif %}">
-                <span>📈</span> <span>Tồn kho & Nhập-Xuất-Tồn</span>
+                <span>Tồn kho & Nhập-Xuất-Tồn</span>
             </a>
         </nav>
 
@@ -49,7 +48,7 @@
                 <div style="color: #f8fafc; font-weight: 600;">{{ current_admin.full_name or 'Quản trị viên' }}</div>
             </div>
             <button onclick="handleAdminLogout()" class="btn-admin-logout" title="Đăng xuất">
-                🚪 Thoát
+                Đăng xuất
             </button>
         </div>
     </aside>
@@ -59,7 +58,7 @@
         <header class="admin-topbar">
             <div class="page-title">{% block page_title %}Tổng Quan Quản Trị{% endblock %}</div>
             <div class="topbar-right">
-                <a href="/" target="_blank" class="btn btn-sm btn-secondary">🌐 Xem Website Bán Hàng &nearr;</a>
+                <a href="/" target="_blank" class="btn btn-sm btn-secondary">Xem Website Bán Hàng &nearr;</a>
             </div>
         </header>
 

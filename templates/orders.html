@@ -8,23 +8,23 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
             <h1 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span>📦</span> Lịch Sử Mua Hàng Của Bạn
+                Lịch Sử Mua Hàng Của Bạn
             </h1>
             <p style="color: #64748b; font-size: 0.9rem;">Theo dõi chi tiết các đơn hàng, tình trạng giao hàng và lịch sử mua sắm nhạc cụ</p>
         </div>
         <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-secondary" onclick="openQuickOrdersModal()">👁 Xem nhanh popup</button>
-            <a href="/" class="btn btn-primary">➕ Tiếp tục mua sắm</a>
+            <button class="btn btn-secondary" onclick="openQuickOrdersModal()">Xem nhanh</button>
+            <a href="/" class="btn btn-primary">Tiếp tục mua sắm</a>
         </div>
     </div>
 
     <!-- Status filter chips -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;" id="orderFilterTabs">
         <button class="btn btn-sm btn-primary order-filter-btn" data-status="all" onclick="filterCustomerOrders('all', this)">Tất cả đơn</button>
-        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="pending" onclick="filterCustomerOrders('pending', this)">⏳ Mới đặt</button>
-        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="processing" onclick="filterCustomerOrders('processing', this)">⚙ Đã xử lý</button>
-        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="delivered" onclick="filterCustomerOrders('delivered', this)">🚚 Đã giao</button>
-        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="cancelled" onclick="filterCustomerOrders('cancelled', this)">✖ Đã hủy</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="pending" onclick="filterCustomerOrders('pending', this)">Mới đặt</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="processing" onclick="filterCustomerOrders('processing', this)">Đã xử lý</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="delivered" onclick="filterCustomerOrders('delivered', this)">Đã giao</button>
+        <button class="btn btn-sm btn-secondary order-filter-btn" data-status="cancelled" onclick="filterCustomerOrders('cancelled', this)">Đã hủy</button>
     </div>
 
     <!-- Orders list container -->

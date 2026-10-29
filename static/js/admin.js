@@ -90,7 +90,7 @@ async function loadAdminUsers(role = null) {
                 <td>${u.phone || '—'}</td>
                 <td>
                     <span class="badge ${u.role === 'admin' ? 'completed' : 'processing'}">
-                        ${u.role === 'admin' ? '👑 Quản trị viên' : 'Khách hàng'}
+                        ${u.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}
                     </span>
                 </td>
                 <td>
@@ -100,13 +100,20 @@ async function loadAdminUsers(role = null) {
                 </td>
                 <td>
                     <div style="display:flex; gap:0.4rem;">
-                        <button class="btn btn-sm ${u.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'}" 
-                                onclick="toggleUserLock(${u.id})" title="Khóa/Mở khóa">
-                            ${u.status === 'active' ? '🔒 Khóa' : '🔓 Mở'}
-                        </button>
+                        ${u.id !== 1 ? `
+                            <button class="btn btn-sm ${u.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'}" 
+                                    onclick="toggleUserLock(${u.id})" title="Khóa/Mở khóa">
+                                ${u.status === 'active' ? 'Khóa' : 'Mở khóa'}
+                            </button>
+                        ` : ''}
                         <button class="btn btn-sm btn-outline-primary" onclick="openResetPasswordModal(${u.id}, '${u.username}')" title="Đổi mật khẩu">
-                            🔑 Đổi mật khẩu
+                            Đổi mật khẩu
                         </button>
+                        ${u.role === 'customer' ? `
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, '${u.username}')" title="Xóa tài khoản khách hàng">
+                                Xóa
+                            </button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -149,9 +156,26 @@ async function submitCreateAdmin(e) {
 }
 
 async function toggleUserLock(userId) {
+    if (userId === 1) {
+        showToast('Không thể khóa tài khoản Quản trị viên tối cao (ID: 1)!', 'error');
+        return;
+    }
     if (!confirm('Bạn có chắc muốn đổi trạng thái khóa/mở khóa tài khoản này?')) return;
     try {
         const res = await fetchAPI(`/api/admin/users/${userId}/toggle-lock`, { method: 'POST' });
+        showToast(res.message, 'success');
+        loadAdminUsers();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản khách hàng "${username}"? Toàn bộ giỏ hàng và đơn hàng liên quan của khách sẽ bị xóa!`)) {
+        return;
+    }
+    try {
+        const res = await fetchAPI(`/api/admin/users/${userId}`, { method: 'DELETE' });
         showToast(res.message, 'success');
         loadAdminUsers();
     } catch (e) {
@@ -209,12 +233,12 @@ async function loadAdminCategories() {
                 </td>
                 <td>
                     <div style="display:flex; gap:0.4rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="openEditCategoryModal(${c.id})">✏ Sửa</button>
+                        <button class="btn btn-sm btn-secondary" onclick="openEditCategoryModal(${c.id})">Sửa</button>
                         <button class="btn btn-sm ${c.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'}" 
                                 onclick="toggleCategoryStatus(${c.id})">
                             ${c.status === 'active' ? 'Ẩn' : 'Hiện'}
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${c.id})" title="Xóa">🗑</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${c.id})" title="Xóa">Xóa</button>
                     </div>
                 </td>
             </tr>
@@ -344,12 +368,13 @@ async function loadAdminProducts() {
                 </td>
                 <td>
                     <div style="display:flex; gap:0.4rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="openEditProductModal(${p.id})">✏ Sửa</button>
+                        <a href="/admin/imports?product_id=${p.id}" class="btn btn-sm btn-outline-primary" title="Tạo phiếu nhập hàng cho sản phẩm này">Nhập hàng</a>
+                        <button class="btn btn-sm btn-secondary" onclick="openEditProductModal(${p.id})">Sửa</button>
                         <button class="btn btn-sm ${p.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'}" 
                                 onclick="toggleProductStatus(${p.id})">
                             ${p.status === 'active' ? 'Ẩn' : 'Hiện'}
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id})" title="Xóa">🗑</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id})" title="Xóa">Xóa</button>
                     </div>
                 </td>
             </tr>
@@ -502,11 +527,11 @@ async function loadAdminImports() {
                 <td>${r.notes || '—'}</td>
                 <td>
                     <div style="display:flex; gap:0.4rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="viewImportDetail(${r.id})">👁 Chi tiết</button>
+                        <button class="btn btn-sm btn-secondary" onclick="viewImportDetail(${r.id})">Chi tiết</button>
                         ${r.status === 'draft' ? `
-                            <button class="btn btn-sm btn-outline-primary" onclick="openEditImportModal(${r.id})">✏ Sửa</button>
-                            <button class="btn btn-sm btn-outline-success" onclick="completeImportReceipt(${r.id})">✔ Hoàn thành</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteImportReceipt(${r.id})">🗑</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditImportModal(${r.id})">Sửa</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="completeImportReceipt(${r.id})">Hoàn thành</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteImportReceipt(${r.id})">Xóa</button>
                         ` : `
                             <span style="color:#64748b; font-size:0.8rem; font-style:italic;">Đã khóa</span>
                         `}
@@ -528,6 +553,20 @@ async function loadProductsForImportDropdown() {
     }
 }
 
+function handleImportProductChange(selectEl) {
+    const prodId = parseInt(selectEl.value);
+    const row = selectEl.closest('.import-item-row');
+    if (!row) return;
+    const priceInput = row.querySelector('.import-price-input');
+    if (prodId && priceInput) {
+        const prod = availableProductsForImport.find(p => p.id === prodId);
+        if (prod && prod.cost_price && parseFloat(priceInput.value || 0) === 0) {
+            priceInput.value = prod.cost_price;
+        }
+    }
+    calculateImportTotal();
+}
+
 function addImportItemRow(existingItem = null) {
     const container = document.getElementById('importItemsContainer');
     const rowIndex = container.children.length;
@@ -535,6 +574,14 @@ function addImportItemRow(existingItem = null) {
     const row = document.createElement('div');
     row.className = 'import-item-row';
     row.style.cssText = 'display: grid; grid-template-columns: 3fr 1.5fr 1fr 1.5fr auto; gap: 0.75rem; align-items: end; margin-bottom: 0.75rem; background: #f8fafc; padding: 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0;';
+
+    let defaultPrice = existingItem ? existingItem.import_price : 0;
+    if (existingItem && existingItem.product_id && defaultPrice === 0) {
+        const found = availableProductsForImport.find(p => p.id === existingItem.product_id);
+        if (found && found.cost_price) {
+            defaultPrice = found.cost_price;
+        }
+    }
 
     const prodOptions = availableProductsForImport.map(p => `
         <option value="${p.id}" ${existingItem && existingItem.product_id === p.id ? 'selected' : ''}>
@@ -545,7 +592,7 @@ function addImportItemRow(existingItem = null) {
     row.innerHTML = `
         <div class="form-group">
             <label style="font-size:0.75rem;">Sản phẩm</label>
-            <select class="form-control import-prod-select" onchange="calculateImportTotal()" required>
+            <select class="form-control import-prod-select" onchange="handleImportProductChange(this)" required>
                 <option value="">-- Chọn sản phẩm --</option>
                 ${prodOptions}
             </select>
@@ -553,7 +600,7 @@ function addImportItemRow(existingItem = null) {
         <div class="form-group">
             <label style="font-size:0.75rem;">Giá nhập (VNĐ)</label>
             <input type="number" class="form-control import-price-input" min="0" step="1000" 
-                   value="${existingItem ? existingItem.import_price : 0}" oninput="calculateImportTotal()" required>
+                   value="${defaultPrice}" oninput="calculateImportTotal()" required>
         </div>
         <div class="form-group">
             <label style="font-size:0.75rem;">Số lượng</label>
@@ -564,7 +611,7 @@ function addImportItemRow(existingItem = null) {
             <label style="font-size:0.75rem;">Thành tiền</label>
             <span class="import-subtotal-text" style="font-weight:700; color:#b45309; line-height:36px;">0 ₫</span>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove(); calculateImportTotal();" style="height:36px;">✖</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove(); calculateImportTotal();" style="height:36px;">&times;</button>
     `;
 
     container.appendChild(row);
@@ -586,13 +633,17 @@ function calculateImportTotal() {
     if (totalEl) totalEl.textContent = formatVND(grandTotal);
 }
 
-function openAddImportModal() {
+function openAddImportModal(preselectedProductId = null) {
     document.getElementById('importModalTitle').textContent = 'Thêm Phiếu Nhập Hàng (Bản nháp)';
     document.getElementById('importId').value = '';
     document.getElementById('importDateInput').value = new Date().toISOString().split('T')[0];
     document.getElementById('importNotesInput').value = '';
     document.getElementById('importItemsContainer').innerHTML = '';
-    addImportItemRow();
+    if (preselectedProductId) {
+        addImportItemRow({ product_id: parseInt(preselectedProductId), import_price: 0, quantity: 5 });
+    } else {
+        addImportItemRow();
+    }
     openAdminModal('importModal');
 }
 
@@ -884,7 +935,7 @@ async function loadAdminOrders() {
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-secondary" onclick="openAdminOrderDetail(${o.id})">👁 Chi tiết & Cập nhật</button>
+                        <button class="btn btn-sm btn-secondary" onclick="openAdminOrderDetail(${o.id})">Chi tiết & Cập nhật</button>
                     </td>
                 </tr>
             `;
@@ -1006,11 +1057,7 @@ async function loadCurrentStock() {
                     </span>
                 </td>
                 <td>
-                    ${item.is_low_stock ? `
-                        <a href="/admin/imports" class="btn btn-sm btn-primary">➕ Nhập hàng ngay</a>
-                    ` : `
-                        <span style="color:#10b981; font-weight:600;">Đủ hàng</span>
-                    `}
+                    <a href="/admin/imports?product_id=${item.id}" class="btn btn-sm btn-primary" title="Tạo phiếu nhập hàng cho sản phẩm này">Nhập hàng</a>
                 </td>
             </tr>
         `).join('');
