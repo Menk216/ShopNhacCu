@@ -35,20 +35,17 @@
         <form id="customerRegisterForm" style="display: none;">
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regUsername">Tên đăng nhập (*)</label>
-                <input type="text" id="regUsername" class="form-control" placeholder="Tối thiểu 2 ký tự" required minlength="2">
-                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 2 ký tự</small>
+                <input type="text" id="regUsername" class="form-control" placeholder="Nhập tên đăng nhập" required minlength="1">
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regPassword">Mật khẩu (*)</label>
-                <input type="password" id="regPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6">
-                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 6 ký tự</small>
+                <input type="password" id="regPassword" class="form-control" placeholder="Nhập mật khẩu" required minlength="6">
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="regFullName">Họ và tên (*)</label>
-                <input type="text" id="regFullName" class="form-control" placeholder="Ví dụ: Trần Văn Nam" required minlength="2">
-                <small style="color: #64748b; font-size: 0.78rem;">Ít nhất 2 ký tự</small>
+                <input type="text" id="regFullName" class="form-control" placeholder="Nhập họ và tên" required minlength="2">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
@@ -58,8 +55,7 @@
                 </div>
                 <div class="form-group">
                     <label for="regPhone">Số điện thoại (*)</label>
-                    <input type="text" id="regPhone" class="form-control" placeholder="10 số (VD: 0901234567)" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
-                    <small style="color: #64748b; font-size: 0.78rem;">Đúng 10 số, không chứa chữ</small>
+                    <input type="text" id="regPhone" class="form-control" placeholder="Nhập số điện thoại" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
                 </div>
             </div>
 
@@ -136,8 +132,8 @@
         const phone = document.getElementById('regPhone').value.trim();
         const address = document.getElementById('regAddress').value.trim();
 
-        if (username.length < 2) {
-            showToast('Tên đăng nhập phải có ít nhất 2 ký tự', 'error');
+        if (username.length < 1) {
+            showToast('Tên đăng nhập phải có ít nhất 1 ký tự', 'error');
             document.getElementById('regUsername').focus();
             return;
         }

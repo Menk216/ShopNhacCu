@@ -196,9 +196,6 @@ def api_register():
     if not username or not password or not full_name:
         return jsonify({'success': False, 'message': 'Vui lòng nhập đầy đủ tên đăng nhập, mật khẩu và họ tên'}), 400
 
-    if len(username) < 2:
-        return jsonify({'success': False, 'message': 'Tên đăng nhập phải có ít nhất 2 ký tự'}), 400
-
     if len(full_name) < 2:
         return jsonify({'success': False, 'message': 'Họ và tên phải có ít nhất 2 ký tự'}), 400
 
@@ -214,6 +211,18 @@ def api_register():
     if existing:
         conn.close()
         return jsonify({'success': False, 'message': 'Tên đăng nhập đã tồn tại trên hệ thống'}), 400
+
+    if email:
+        existing_email = conn.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
+        if existing_email:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Email đã được dùng để đăng ký tài khoản khác'}), 400
+
+    if phone:
+        existing_phone = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+        if existing_phone:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Số điện thoại đã được dùng để đăng ký tài khoản khác'}), 400
 
     password_hash = generate_password_hash(password)
     cursor = conn.cursor()
@@ -302,6 +311,18 @@ def api_profile():
     if phone and not re.match(r'^[0-9]{10}$', phone):
         conn.close()
         return jsonify({'success': False, 'message': 'Số điện thoại phải gồm đúng 10 chữ số và không được chứa chữ'}), 400
+
+    if email:
+        existing_email = conn.execute("SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?", (email, g.user['id'])).fetchone()
+        if existing_email:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Email đã được dùng bởi tài khoản khác'}), 400
+
+    if phone:
+        existing_phone = conn.execute("SELECT id FROM users WHERE phone = ? AND id != ?", (phone, g.user['id'])).fetchone()
+        if existing_phone:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Số điện thoại đã được dùng bởi tài khoản khác'}), 400
 
     if new_password:
         if len(new_password) < 6:
