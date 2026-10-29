@@ -12,8 +12,31 @@ let currentFilters = {
     sort: 'newest'
 };
 
-// Initialize index page if elements exist
+// Initialize customer frontend components on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Header Quick Search (Available globally across all pages)
+    const quickSearchForm = document.getElementById('quickSearchForm');
+    if (quickSearchForm) {
+        quickSearchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = document.getElementById('quickSearchInput')?.value.trim() || '';
+            const grid = document.getElementById('productGrid');
+            if (!grid) {
+                // If on cart, orders, profile, etc. -> redirect to catalog with search keyword
+                window.location.href = val ? `/?q=${encodeURIComponent(val)}` : '/';
+            } else {
+                // If on home/catalog page -> filter in-place via AJAX
+                currentFilters.q = val;
+                const kwInput = document.getElementById('searchKeyword');
+                if (kwInput) kwInput.value = val;
+                currentFilters.page = 1;
+                const newUrl = val ? `/?q=${encodeURIComponent(val)}` : '/';
+                window.history.pushState({ q: val }, '', newUrl);
+                fetchAndRenderProducts();
+            }
+        });
+    }
+
     // 1. Check if we're on product listing page
     if (document.getElementById('productGrid')) {
         initProductCatalog();
@@ -40,20 +63,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Handle browser Back / Forward buttons on catalog page
+window.addEventListener('popstate', () => {
+    const grid = document.getElementById('productGrid');
+    if (!grid) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const catId = urlParams.get('category_id');
+    currentFilters.category_id = catId ? parseInt(catId) : null;
+    currentFilters.q = urlParams.get('q') || '';
+    currentFilters.page = 1;
+
+    const catSelect = document.getElementById('searchCategory');
+    if (catSelect) catSelect.value = currentFilters.category_id || '';
+    const kwInput = document.getElementById('searchKeyword');
+    if (kwInput) kwInput.value = currentFilters.q;
+    const quickInput = document.getElementById('quickSearchInput');
+    if (quickInput) quickInput.value = currentFilters.q;
+
+    document.querySelectorAll('.sub-nav-link').forEach(el => {
+        const elCatId = el.getAttribute('data-category-id');
+        if ((catId && elCatId === catId) || (!catId && !elCatId)) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    });
+
+    fetchAndRenderProducts();
+});
+
 // ================= PRODUCT CATALOG & SEARCH =================
 
 function initProductCatalog() {
     // Check URL params for category or query
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('category_id')) {
-        currentFilters.category_id = parseInt(urlParams.get('category_id'));
+    const catIdParam = urlParams.get('category_id');
+    if (catIdParam) {
+        currentFilters.category_id = parseInt(catIdParam);
         const catSelect = document.getElementById('searchCategory');
         if (catSelect) catSelect.value = currentFilters.category_id;
+
+        // Highlight active sub-nav category chip
+        document.querySelectorAll('.sub-nav-link').forEach(el => {
+            if (el.getAttribute('data-category-id') === catIdParam) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    } else {
+        document.querySelectorAll('.sub-nav-link').forEach(el => {
+            if (!el.getAttribute('data-category-id')) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
     }
+
     if (urlParams.get('q')) {
         currentFilters.q = urlParams.get('q');
         const searchInput = document.getElementById('searchKeyword');
         if (searchInput) searchInput.value = currentFilters.q;
+        const quickInput = document.getElementById('quickSearchInput');
+        if (quickInput) quickInput.value = currentFilters.q;
     }
 
     // Advanced search submit
@@ -70,25 +143,25 @@ function initProductCatalog() {
             currentFilters.max_price = maxP ? parseFloat(maxP) : null;
             
             currentFilters.page = 1;
-            fetchAndRenderProducts();
-        });
-    }
 
-    // Quick search from header
-    const quickSearchForm = document.getElementById('quickSearchForm');
-    if (quickSearchForm) {
-        quickSearchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const val = document.getElementById('quickSearchInput').value.trim();
-            if (window.location.pathname !== '/') {
-                window.location.href = `/?q=${encodeURIComponent(val)}`;
-            } else {
-                currentFilters.q = val;
-                const kwInput = document.getElementById('searchKeyword');
-                if (kwInput) kwInput.value = val;
-                currentFilters.page = 1;
-                fetchAndRenderProducts();
-            }
+            // Update sub-nav active chip
+            document.querySelectorAll('.sub-nav-link').forEach(el => {
+                const elCatId = el.getAttribute('data-category-id');
+                if ((currentFilters.category_id && elCatId === String(currentFilters.category_id)) || (!currentFilters.category_id && !elCatId)) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            // Update URL without page reload
+            const params = new URLSearchParams();
+            if (currentFilters.category_id) params.set('category_id', currentFilters.category_id);
+            if (currentFilters.q) params.set('q', currentFilters.q);
+            const queryStr = params.toString();
+            window.history.pushState({}, '', queryStr ? `/?${queryStr}` : '/');
+
+            fetchAndRenderProducts();
         });
     }
 
@@ -96,10 +169,17 @@ function initProductCatalog() {
 }
 
 function resetAdvancedSearch() {
-    document.getElementById('searchKeyword').value = '';
-    document.getElementById('searchCategory').value = '';
-    document.getElementById('searchMinPrice').value = '';
-    document.getElementById('searchMaxPrice').value = '';
+    const kwInput = document.getElementById('searchKeyword');
+    if (kwInput) kwInput.value = '';
+    const catSelect = document.getElementById('searchCategory');
+    if (catSelect) catSelect.value = '';
+    const minP = document.getElementById('searchMinPrice');
+    if (minP) minP.value = '';
+    const maxP = document.getElementById('searchMaxPrice');
+    if (maxP) maxP.value = '';
+    const quickInput = document.getElementById('quickSearchInput');
+    if (quickInput) quickInput.value = '';
+
     currentFilters = {
         page: 1,
         limit: 8,
@@ -109,14 +189,40 @@ function resetAdvancedSearch() {
         max_price: null,
         sort: 'newest'
     };
+
+    window.history.pushState({}, '', '/');
+
+    document.querySelectorAll('.sub-nav-link').forEach(el => {
+        if (!el.getAttribute('data-category-id')) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    });
+
     fetchAndRenderProducts();
 }
 
-function filterByCategory(categoryId, element) {
-    currentFilters.category_id = categoryId;
+function filterByCategory(categoryId, element, event) {
+    const grid = document.getElementById('productGrid');
+    if (!grid) {
+        // If the user is on /cart or any other page, redirect to catalog page
+        window.location.href = categoryId ? `/?category_id=${categoryId}` : '/';
+        return;
+    }
+
+    if (event) {
+        event.preventDefault();
+    }
+
+    currentFilters.category_id = categoryId ? parseInt(categoryId) : null;
     currentFilters.page = 1;
     const catSelect = document.getElementById('searchCategory');
     if (catSelect) catSelect.value = categoryId || '';
+
+    // Update URL without page reload
+    const newUrl = categoryId ? `/?category_id=${categoryId}` : '/';
+    window.history.pushState({ category_id: categoryId }, '', newUrl);
 
     // Update active class on sub-nav
     document.querySelectorAll('.sub-nav-link').forEach(el => el.classList.remove('active'));
@@ -162,7 +268,8 @@ async function fetchAndRenderProducts() {
             if (currentFilters.q) {
                 titleEl.textContent = `Kết quả tìm kiếm cho: "${currentFilters.q}" (${res.pagination.total_items} sản phẩm)`;
             } else if (currentFilters.category_id) {
-                const catName = res.products[0]?.category_name || 'Danh mục';
+                const activeLink = document.querySelector(`.sub-nav-link[data-category-id="${currentFilters.category_id}"]`);
+                const catName = res.products[0]?.category_name || (activeLink ? activeLink.textContent.trim() : 'Danh mục');
                 titleEl.textContent = `${catName} (${res.pagination.total_items} sản phẩm)`;
             } else {
                 titleEl.textContent = `Tất cả nhạc cụ (${res.pagination.total_items} sản phẩm)`;

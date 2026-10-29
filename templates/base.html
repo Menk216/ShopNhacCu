@@ -18,8 +18,8 @@
             </a>
 
             <!-- Quick search in header -->
-            <form id="quickSearchForm" class="search-bar-quick">
-                <input type="text" id="quickSearchInput" placeholder="Tìm kiếm guitar, piano, kèn, trống..." value="{{ request.args.get('q', '') }}">
+            <form id="quickSearchForm" class="search-bar-quick" action="/" method="GET">
+                <input type="text" id="quickSearchInput" name="q" placeholder="Tìm kiếm guitar, piano, kèn, trống..." value="{{ request.args.get('q', '') }}">
                 <button type="submit" title="Tìm kiếm"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
             </form>
 
@@ -60,9 +60,9 @@
         <!-- Sub Navigation / Category chips -->
         <nav class="sub-nav">
             <div class="sub-nav-container">
-                <a href="javascript:void(0)" class="sub-nav-link active" onclick="filterByCategory(null, this)">Tất cả nhạc cụ</a>
+                <a href="/" class="sub-nav-link {% if not request.args.get('category_id') and request.path == '/' %}active{% endif %}" data-category-id="" onclick="filterByCategory(null, this, event)">Tất cả nhạc cụ</a>
                 {% for cat in nav_categories %}
-                    <a href="javascript:void(0)" class="sub-nav-link" onclick="filterByCategory({{ cat.id }}, this)">{{ cat.name }}</a>
+                    <a href="/?category_id={{ cat.id }}" class="sub-nav-link {% if request.args.get('category_id') == cat.id|string %}active{% endif %}" data-category-id="{{ cat.id }}" onclick="filterByCategory({{ cat.id }}, this, event)">{{ cat.name }}</a>
                 {% endfor %}
             </div>
         </nav>

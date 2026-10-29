@@ -276,6 +276,7 @@ body {
     padding: 0.35rem 0.6rem;
     border-radius: 6px;
     transition: all 0.2s;
+    cursor: pointer;
 }
 
 .sub-nav-link:hover, .sub-nav-link.active {
