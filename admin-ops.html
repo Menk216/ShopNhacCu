@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Operations – Melody Store</title>
+  <link rel="stylesheet" href="static/css/admin.css" />
+  <style>
+    /* ── Toast ── */
+    #toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+    .toast { padding:12px 20px; border-radius:8px; color:#fff; font-size:14px; font-weight:500; opacity:0; animation:slideIn .3s forwards; min-width:260px; box-shadow:0 4px 16px rgba(0,0,0,.18); }
+    .toast.success { background:#22c55e; }
+    .toast.error   { background:#ef4444; }
+    .toast.info    { background:#3b82f6; }
+    .toast.warning { background:#f59e0b; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+
+    /* ── Badges ── */
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+    .badge-yellow { background:#fef3c7; color:#92400e; }
+    .badge-green  { background:#d1fae5; color:#065f46; }
+    .badge-red    { background:#fee2e2; color:#991b1b; }
+    .badge-blue   { background:#dbeafe; color:#1e40af; }
+    .badge-orange { background:#ffedd5; color:#9a3412; }
+
+    /* ── Section ── */
+    .admin-section { display:none; }
+    .admin-section.active { display:block; }
+
+    /* ── Tabs ── */
+    .tab-bar { display:flex; gap:0; border-bottom:2px solid #e5e7eb; margin-bottom:20px; }
+    .tab-btn { padding:10px 22px; cursor:pointer; border:none; background:none; font-size:14px; font-weight:600; color:#6b7280; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .2s; }
+    .tab-btn.active { color:#7c3aed; border-bottom-color:#7c3aed; }
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; }
+
+    /* ── Toolbar ── */
+    .ops-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
+    .ops-toolbar input, .ops-toolbar select { padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
+    .ops-toolbar input:focus, .ops-toolbar select:focus { outline:none; border-color:#7c3aed; }
+
+    /* ── Table ── */
+    .ops-table { width:100%; border-collapse:collapse; font-size:14px; }
+    .ops-table th { background:#f3f0ff; color:#5b21b6; padding:10px 12px; text-align:left; font-weight:700; border-bottom:2px solid #ddd6fe; white-space:nowrap; }
+    .ops-table td { padding:10px 12px; border-bottom:1px solid #f0eeff; vertical-align:middle; }
+    .ops-table tr:hover td { background:#faf5ff; }
+    .ops-table-wrap { overflow-x:auto; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+
+    /* ── Buttons ── */
+    .btn { display:inline-flex; align-items:center; gap:5px; padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .15s; }
+    .btn-primary   { background:#7c3aed; color:#fff; }
+    .btn-primary:hover   { background:#6d28d9; }
+    .btn-success   { background:#22c55e; color:#fff; }
+    .btn-success:hover   { background:#16a34a; }
+    .btn-danger    { background:#ef4444; color:#fff; }
+    .btn-danger:hover    { background:#dc2626; }
+    .btn-info      { background:#3b82f6; color:#fff; }
+    .btn-info:hover      { background:#2563eb; }
+    .btn-warning   { background:#f59e0b; color:#fff; }
+    .btn-warning:hover   { background:#d97706; }
+    .btn-outline   { background:#fff; border:1.5px solid #7c3aed; color:#7c3aed; }
+    .btn-outline:hover   { background:#f3f0ff; }
+    .btn-sm { padding:5px 10px; font-size:12px; }
+    .btn-xs { padding:3px 8px; font-size:11px; border-radius:5px; }
+
+    /* ── Modal ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; justify-content:center; align-items:flex-start; overflow-y:auto; padding:30px 10px; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:14px; width:100%; max-width:860px; box-shadow:0 8px 40px rgba(0,0,0,.22); animation:popIn .2s; }
+    .modal-box.modal-lg { max-width:1050px; }
+    @keyframes popIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+    .modal-header { padding:18px 24px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }
+    .modal-header h3 { margin:0; font-size:18px; color:#5b21b6; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#9ca3af; }
+    .modal-close:hover { color:#ef4444; }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; }
+
+    /* ── Form ── */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-grid.col3 { grid-template-columns:1fr 1fr 1fr; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-group label { font-size:13px; font-weight:600; color:#374151; }
+    .form-group input, .form-group select, .form-group textarea { padding:9px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; font-family:inherit; resize:none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#7c3aed; }
+    .form-group input[readonly], .form-group input[disabled] { background:#f9fafb; color:#6b7280; }
+
+    /* ── Import receipt items ── */
+    .import-items-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+    .import-items-table th { background:#f3f0ff; color:#5b21b6; padding:8px 10px; text-align:left; border-bottom:2px solid #ddd6fe; }
+    .import-items-table td { padding:7px 8px; border-bottom:1px solid #f0eeff; vertical-align:middle; }
+    .import-items-table select, .import-items-table input { padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box; }
+    .import-items-table select:focus, .import-items-table input:focus { outline:none; border-color:#7c3aed; }
+    .import-total-bar { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding:12px 0 4px; font-weight:700; font-size:15px; color:#5b21b6; }
+
+    /* ── Pricing inline inputs ── */
+    .margin-input { width:80px; padding:5px 8px; border:1.5px solid #d1d5db; border-radius:6px; font-size:13px; text-align:center; }
+    .margin-input:focus { outline:none; border-color:#7c3aed; }
+    .calc-price { font-weight:700; color:#16a34a; }
+
+    /* ── Low stock warning ── */
+    .low-stock-box { background:#fff7ed; border:2px solid #f97316; border-radius:12px; padding:18px 22px; margin-bottom:24px; }
+    .low-stock-box h4 { margin:0 0 12px; color:#c2410c; font-size:16px; display:flex; align-items:center; gap:8px; }
+    .low-stock-count { display:inline-block; background:#ef4444; color:#fff; border-radius:12px; padding:2px 10px; font-size:13px; font-weight:700; }
+    .low-stock-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .low-stock-table th { background:#ffedd5; color:#9a3412; padding:8px 10px; text-align:left; }
+    .low-stock-table td { padding:8px 10px; border-bottom:1px solid #fed7aa; }
+    .low-stock-table tr:last-child td { border-bottom:none; }
+
+    /* ── Report table ── */
+    .report-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .report-table th { background:#ede9fe; color:#5b21b6; padding:9px 12px; text-align:left; font-weight:700; }
+    .report-table td { padding:9px 12px; border-bottom:1px solid #f0eeff; }
+    .report-table tr:nth-child(even) td { background:#faf5ff; }
+    .report-table tr.totals-row td { background:#f3f0ff; font-weight:700; color:#5b21b6; border-top:2px solid #c4b5fd; }
+
+    /* ── Inventory stock status colors ── */
+    .stock-ok  { color:#16a34a; font-weight:700; }
+    .stock-low { color:#d97706; font-weight:700; }
+    .stock-out { color:#dc2626; font-weight:700; }
+
+    /* ── Order detail ── */
+    .order-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .order-info-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; font-size:14px; }
+    .order-info-list li { display:flex; gap:8px; }
+    .order-info-list li span:first-child { color:#6b7280; min-width:130px; flex-shrink:0; }
+    .order-info-list li span:last-child { font-weight:600; color:#111827; word-break:break-word; }
+    .status-btn-bar { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .status-btn-bar .btn { flex:1; min-width:100px; justify-content:center; }
+    .status-btn-bar .btn.active-status { box-shadow:0 0 0 3px #7c3aed55; }
+
+    /* ── Sidebar separator ── */
+    .sidebar-sep { padding:6px 16px; color:#9ca3af; font-size:11px; letter-spacing:.08em; user-select:none; }
+
+    /* ── Report filter bar ── */
+    .report-filter { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; padding:14px 16px; background:#f3f0ff; border-radius:10px; }
+    .report-filter label { font-size:13px; font-weight:600; color:#374151; }
+    .report-filter input { padding:7px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:13px; }
+
+    /* ── Responsive ── */
+    @media(max-width:700px) {
+      .form-grid { grid-template-columns:1fr; }
+      .order-detail-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Admin layout wrapper -->
+<div class="admin-layout" id="app" style="display:none;">
+
+  <!-- ═══════ SIDEBAR ═══════ -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">🎵 MELODY STORE ADMIN</div>
+    <div class="sidebar-user" id="sidebar-user-name"></div>
+
+    <nav class="sidebar-nav">
+      <!-- Main admin pages -->
+      <a class="nav-item" href="admin.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="admin.html"><span class="nav-icon">👥</span> Người dùng</a>
+      <a class="nav-item" href="admin.html"><span class="nav-icon">🏷️</span> Danh mục</a>
+      <a class="nav-item" href="admin.html"><span class="nav-icon">🎸</span> Sản phẩm</a>
+
+      <div class="sidebar-sep">━━ VẬN HÀNH ━━</div>
+
+      <!-- Ops sections -->
+      <a class="nav-item" id="nav-imports" onclick="showSection('imports');return false;" href="#">
+        <span class="nav-icon">📋</span> Phiếu Nhập Hàng
+      </a>
+      <a class="nav-item" id="nav-pricing" onclick="showSection('pricing');return false;" href="#">
+        <span class="nav-icon">💰</span> Quản lý Giá Bán
+      </a>
+      <a class="nav-item" id="nav-orders" onclick="showSection('orders');return false;" href="#">
+        <span class="nav-icon">📦</span> Quản lý Đơn Hàng
+      </a>
+      <a class="nav-item" id="nav-inventory" onclick="showSection('inventory');return false;" href="#">
+        <span class="nav-icon">🏪</span> Quản lý Tồn Kho
+      </a>
+
+      <div class="sidebar-sep">━━━━━━━━━━━━━━━</div>
+
+      <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span> Về trang chủ</a>
+      <a class="nav-item" id="btn-logout" href="#"><span class="nav-icon">🚪</span> Đăng xuất</a>
+    </nav>
+  </aside>
+
+  <!-- ═══════ MAIN CONTENT ═══════ -->
+  <main class="admin-main">
+    <div class="admin-content">
+
+      <!-- ════════════════════════════════════════════
+           SECTION 1: PHIẾU NHẬP HÀNG
+      ════════════════════════════════════════════ -->
+      <div class="admin-section active" id="section-imports">
+        <div class="section-header">
+          <h2>📋 Phiếu Nhập Hàng</h2>
+          <p class="section-desc">Quản lý phiếu nhập hàng và cập nhật tồn kho</p>
+        </div>
+
+        <div class="ops-toolbar">
+          <input type="text" id="import-search" placeholder="🔍 Tìm mã phiếu, ghi chú…" oninput="filterImports()" style="min-width:260px;" />
+          <button class="btn btn-primary" onclick="openImportModal(null)">➕ Thêm Phiếu Nhập</button>
+        </div>
+
+        <div class="ops-table-wrap">
+          <table class="ops-table" id="import-table">
+            <thead>
+              <tr>
+                <th>Mã phiếu</th>
+                <th>Ngày nhập</th>
+                <th>Trạng thái</th>
+                <th>Tổng tiền nhập</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="import-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           SECTION 2: QUẢN LÝ GIÁ BÁN
+      ════════════════════════════════════════════ -->
+      <div class="admin-section" id="section-pricing">
+        <div class="section-header">
+          <h2>💰 Quản lý Giá Bán</h2>
+          <p class="section-desc">Điều chỉnh tỷ lệ lợi nhuận theo danh mục và từng sản phẩm</p>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-cat-btn" onclick="switchPricingTab('cat')">🏷️ Giá theo Danh mục</button>
+          <button class="tab-btn" id="tab-prod-btn" onclick="switchPricingTab('prod')">🎸 Giá theo Sản phẩm</button>
+        </div>
+
+        <!-- Tab A: Category margins -->
+        <div class="tab-pane active" id="tab-cat">
+          <div class="ops-table-wrap">
+            <table class="ops-table" id="cat-pricing-table">
+              <thead>
+                <tr>
+                  <th>Danh mục</th>
+                  <th>% Lợi nhuận hiện tại</th>
+                  <th>Số sản phẩm áp dụng</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="cat-pricing-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:14px;text-align:right;">
+            <button class="btn btn-primary" onclick="saveAllCategoryMargins()">💾 Lưu tất cả</button>
+          </div>
+        </div>
+
+        <!-- Tab B: Per-product overrides -->
+        <div class="tab-pane" id="tab-prod">
+          <div class="ops-toolbar">
+            <label style="font-weight:600;font-size:14px;">Lọc danh mục:</label>
+            <select id="prod-pricing-cat-filter" onchange="loadProductPricing(this.value)">
+              <option value="">-- Tất cả --</option>
+            </select>
+          </div>
+          <div class="ops-table-wrap">
+            <table class="ops-table" id="prod-pricing-table">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Danh mục</th>
+                  <th>Giá vốn</th>
+                  <th>% LN Danh mục</th>
+                  <th>% LN Riêng</th>
+                  <th>Giá bán tính toán</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="prod-pricing-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           SECTION 3: QUẢN LÝ ĐƠN HÀNG
+      ════════════════════════════════════════════ -->
+      <div class="admin-section" id="section-orders">
+        <div class="section-header">
+          <h2>📦 Quản lý Đơn Hàng</h2>
+          <p class="section-desc">Theo dõi và xử lý đơn hàng khách hàng</p>
+        </div>
+
+        <div class="ops-toolbar" style="background:#f3f0ff;padding:14px;border-radius:10px;margin-bottom:18px;">
+          <label style="font-size:13px;font-weight:600;">Từ ngày:</label>
+          <input type="date" id="order-date-from" />
+          <label style="font-size:13px;font-weight:600;">Đến ngày:</label>
+          <input type="date" id="order-date-to" />
+          <label style="font-size:13px;font-weight:600;">Trạng thái:</label>
+          <select id="order-status-filter">
+            <option value="">Tất cả</option>
+            <option value="pending">Mới đặt</option>
+            <option value="processing">Đã xử lý</option>
+            <option value="delivered">Đã giao</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+          <input type="text" id="order-search" placeholder="🔍 Mã đơn, tên khách…" style="min-width:200px;" />
+          <button class="btn btn-primary" onclick="filterOrders()">🔍 Tìm kiếm</button>
+          <button class="btn btn-outline" onclick="resetOrderFilter()">↺ Đặt lại</button>
+        </div>
+
+        <div class="ops-table-wrap">
+          <table class="ops-table" id="orders-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>SĐT</th>
+                <th>Ngày đặt</th>
+                <th>Tổng tiền</th>
+                <th>Thanh toán</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           SECTION 4: QUẢN LÝ TỒN KHO
+      ════════════════════════════════════════════ -->
+      <div class="admin-section" id="section-inventory">
+        <div class="section-header">
+          <h2>🏪 Quản lý Tồn Kho</h2>
+          <p class="section-desc">Theo dõi tồn kho và báo cáo nhập - xuất - tồn</p>
+        </div>
+
+        <!-- Low stock alert box -->
+        <div class="low-stock-box" id="low-stock-alert-box"></div>
+
+        <!-- Sub A: Current stock -->
+        <div class="admin-card" style="margin-bottom:24px;">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <h3 style="margin:0;font-size:16px;">📦 Tồn kho hiện tại</h3>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <label style="font-size:13px;font-weight:600;">Lọc danh mục:</label>
+              <select id="inv-cat-filter" onchange="loadInventory(this.value)">
+                <option value="">Tất cả</option>
+              </select>
+            </div>
+          </div>
+          <div class="ops-table-wrap" style="margin-top:14px;">
+            <table class="ops-table" id="inv-table">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Danh mục</th>
+                  <th>Tồn kho hiện tại</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sub C: Report -->
+        <div class="admin-card">
+          <div class="card-header">
+            <h3 style="margin:0;font-size:16px;">📊 Báo cáo Nhập - Xuất - Tồn</h3>
+          </div>
+          <div class="report-filter">
+            <label>Từ ngày:</label>
+            <input type="date" id="report-date-from" />
+            <label>Đến ngày:</label>
+            <input type="date" id="report-date-to" />
+            <button class="btn btn-primary" onclick="loadReport()">📊 Xem báo cáo</button>
+            <button class="btn btn-outline" onclick="exportReport()">⬇️ Xuất báo cáo</button>
+          </div>
+          <div id="report-result"></div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </main>
+</div><!-- /admin-layout -->
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL: ADD / EDIT IMPORT RECEIPT
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h3 id="import-modal-title">Thêm Phiếu Nhập Hàng</h3>
+      <button class="modal-close" onclick="closeModal('import-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Mã phiếu</label>
+          <input type="text" id="im-code" placeholder="PN-2026-XXX" />
+        </div>
+        <div class="form-group">
+          <label>Ngày nhập</label>
+          <input type="date" id="im-date" />
+        </div>
+        <div class="form-group full">
+          <label>Ghi chú</label>
+          <textarea id="im-notes" rows="2" placeholder="Ghi chú về lô hàng…"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <strong style="font-size:14px;color:#5b21b6;">Danh sách sản phẩm nhập</strong>
+        <button class="btn btn-outline btn-sm" onclick="addImportItemRow()">➕ Thêm dòng sản phẩm</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="import-items-table">
+          <thead>
+            <tr>
+              <th style="min-width:220px;">Sản phẩm</th>
+              <th style="min-width:130px;">Giá nhập (₫)</th>
+              <th style="min-width:90px;">Số lượng</th>
+              <th style="min-width:130px;">Thành tiền</th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="im-items-tbody"></tbody>
+        </table>
+      </div>
+      <div class="import-total-bar">
+        <span>Tổng cộng:</span>
+        <span id="im-total-display" style="color:#16a34a;font-size:17px;">0 ₫</span>
+      </div>
+    </div>
+    <div class="modal-footer" id="import-modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
+      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
+      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL: ORDER DETAIL
+════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h3 id="order-modal-title">Chi tiết Đơn Hàng</h3>
+      <button class="modal-close" onclick="closeModal('order-modal')">×</button>
+    </div>
+    <div class="modal-body" id="order-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('order-modal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════
+   MOCK DATA
+═══════════════════════════════════════════════════ */
+let MOCK_CATEGORIES = [
+  { id:1, code:'GUITAR', name:'Đàn Guitar', profit_margin:25 },
+  { id:2, code:'PIANO',  name:'Đàn Piano & Keyboard', profit_margin:20 },
+  { id:3, code:'DRUMS',  name:'Trống & Bộ Gõ', profit_margin:30 },
+  { id:4, code:'VIOLIN', name:'Đàn Violin & Nhạc Cụ Dây', profit_margin:22 },
+  { id:5, code:'WIND',   name:'Nhạc Cụ Hơi (Kèn & Sáo)', profit_margin:25 },
+  { id:6, code:'ACC',    name:'Phụ Kiện Âm Nhạc', profit_margin:35 }
+];
+
+let MOCK_PRODUCTS = [
+  { id:1,  category_id:1, code:'GTR-YAM-F310',   name:'Đàn Guitar Acoustic Yamaha F310',         cost_price:2500000,  profit_margin:null, status:'active', stock:15 },
+  { id:2,  category_id:1, code:'GTR-FEN-STRAT',   name:'Đàn Guitar Điện Fender Stratocaster',      cost_price:16000000, profit_margin:22,   status:'active', stock:6  },
+  { id:3,  category_id:1, code:'GTR-TAY-214CE',   name:'Đàn Guitar Acoustic Taylor 214ce',         cost_price:26000000, profit_margin:18,   status:'active', stock:4  },
+  { id:4,  category_id:2, code:'PNO-ROL-FP30X',   name:'Đàn Piano Điện Roland FP-30X',             cost_price:15500000, profit_margin:null, status:'active', stock:8  },
+  { id:5,  category_id:2, code:'PNO-YAM-P45',     name:'Đàn Piano Điện Yamaha P-45B',              cost_price:9800000,  profit_margin:null, status:'active', stock:12 },
+  { id:6,  category_id:3, code:'DRM-PEA-ROAD',    name:'Bộ Trống Cơ Pearl Roadshow',               cost_price:13200000, profit_margin:null, status:'active', stock:5  },
+  { id:7,  category_id:3, code:'DRM-ROL-TD1DMK',  name:'Bộ Trống Điện Tử Roland TD-1DMK',          cost_price:16500000, profit_margin:25,   status:'active', stock:7  },
+  { id:8,  category_id:4, code:'VLN-YAM-V5SC',    name:'Đàn Violin Yamaha V5SC 4/4',               cost_price:8500000,  profit_margin:null, status:'active', stock:8  },
+  { id:9,  category_id:5, code:'WND-YAM-YFL222',  name:'Kèn Sáo Flute Yamaha YFL-222',             cost_price:11200000, profit_margin:null, status:'active', stock:7  },
+  { id:10, category_id:5, code:'WND-YAM-YAS280',  name:'Kèn Saxophone Alto Yamaha YAS-280',        cost_price:24500000, profit_margin:20,   status:'active', stock:4  },
+  { id:11, category_id:6, code:'ACC-KOR-TM60',    name:'Máy Đập Nhịp Korg TM-60',                  cost_price:680000,   profit_margin:null, status:'active', stock:30 },
+  { id:12, category_id:6, code:'ACC-DAD-EJ16',    name:"Bộ Dây Đàn D'Addario EJ16",               cost_price:185000,   profit_margin:50,   status:'active', stock:45 }
+];
+
+let MOCK_IMPORT_RECEIPTS = [
+  { id:1, receipt_code:'PN-2026-001', import_date:'2026-10-14', status:'completed', total_cost:78500000,
+    notes:'Nhập lô Guitar Yamaha và Roland Piano',
+    items:[{product_id:1,import_price:2500000,quantity:10,subtotal:25000000},{product_id:4,import_price:15500000,quantity:3,subtotal:46500000}] },
+  { id:2, receipt_code:'PN-2026-002', import_date:'2026-10-24', status:'completed', total_cost:52100000,
+    notes:'Nhập bổ sung trống Pearl và kèn Saxophone',
+    items:[{product_id:6,import_price:13200000,quantity:2,subtotal:26400000},{product_id:10,import_price:24500000,quantity:1,subtotal:24500000}] },
+  { id:3, receipt_code:'PN-2026-003', import_date:'2026-10-29', status:'draft',     total_cost:29200000,
+    notes:'Phiếu nháp: Nhập Violin và Guitar Classic',
+    items:[{product_id:8,import_price:8200000,quantity:2,subtotal:16400000},{product_id:3,import_price:3200000,quantity:4,subtotal:12800000}] }
+];
+
+let MOCK_ORDERS = [
+  { id:1, order_code:'DH-2026-001', user_id:2, recipient_name:'Nguyễn Văn An',  recipient_phone:'0912345678',
+    recipient_address:'123 Lê Lợi, Q.1, TP.HCM', payment_method:'cod', payment_status:'paid',
+    order_status:'delivered', total_amount:3125000, notes:'Giao giờ hành chính', created_at:'2026-10-22 09:30',
+    items:[{product_id:1, product_name:'Đàn Guitar Acoustic Yamaha F310', unit_price:3125000, quantity:1, subtotal:3125000}] },
+  { id:2, order_code:'DH-2026-002', user_id:3, recipient_name:'Trần Thị Mai',   recipient_phone:'0987654321',
+    recipient_address:'45 Hai Bà Trưng, Hoàn Kiếm, HN', payment_method:'bank_transfer', payment_status:'paid',
+    order_status:'processing', total_amount:18600000, notes:'Đóng gói cẩn thận', created_at:'2026-10-27 14:15',
+    items:[{product_id:4, product_name:'Đàn Piano Điện Roland FP-30X', unit_price:18600000, quantity:1, subtotal:18600000}] },
+  { id:3, order_code:'DH-2026-003', user_id:2, recipient_name:'Nguyễn Văn An',  recipient_phone:'0912345678',
+    recipient_address:'Chung cư Sunrise City, Q.7, TP.HCM', payment_method:'cod', payment_status:'unpaid',
+    order_status:'pending', total_amount:1067000, notes:'Giao cuối tuần', created_at:'2026-10-29 08:00',
+    items:[{product_id:11, product_name:'Máy Đập Nhịp Korg TM-60', unit_price:1067000, quantity:1, subtotal:1067000}] },
+  { id:4, order_code:'DH-2026-004', user_id:3, recipient_name:'Trần Thị Mai',   recipient_phone:'0987654321',
+    recipient_address:'45 Hai Bà Trưng, HN', payment_method:'online', payment_status:'unpaid',
+    order_status:'cancelled', total_amount:5125000, notes:'Khách đổi ý', created_at:'2026-10-19 11:00',
+    items:[{product_id:5, product_name:'Đàn Piano Điện Yamaha P-45B', unit_price:5125000, quantity:1, subtotal:5125000}] }
+];
+
+let nextReceiptId = 4;
+let currentImportId = null; // id being edited, null = new
+
+/* ═══════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════ */
+function formatVND(n) {
+  if (n === null || n === undefined) return '—';
+  return new Intl.NumberFormat('vi-VN', { style:'currency', currency:'VND' }).format(n);
+}
+
+function formatDate(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function formatDateOnly(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getCategoryById(id) {
+  return MOCK_CATEGORIES.find(c => c.id === id) || null;
+}
+
+function getProductById(id) {
+  return MOCK_PRODUCTS.find(p => p.id === id) || null;
+}
+
+function calcPrice(product) {
+  const cat = getCategoryById(product.category_id);
+  const margin = (product.profit_margin !== null && product.profit_margin !== undefined)
+    ? product.profit_margin
+    : (cat ? cat.profit_margin : 0);
+  return Math.round(product.cost_price * (1 + margin / 100) / 1000) * 1000;
+}
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+function genReceiptCode() {
+  const yr = new Date().getFullYear();
+  const num = String(nextReceiptId).padStart(3, '0');
+  return `PN-${yr}-${num}`;
+}
+
+/* ═══════════════════════════════════════════════════
+   AUTH GUARD
+═══════════════════════════════════════════════════ */
+(function checkAuth() {
+  const adminUser = localStorage.getItem('adminUser');
+  if (!adminUser) {
+    window.location.href = 'admin.html';
+    return;
+  }
+  let user;
+  try { user = JSON.parse(adminUser); } catch(e) { user = { full_name: adminUser }; }
+  document.getElementById('sidebar-user-name').textContent = '👤 ' + (user.full_name || user.username || adminUser);
+  document.getElementById('app').style.display = 'flex';
+})();
+
+document.getElementById('btn-logout').addEventListener('click', function(e) {
+  e.preventDefault();
+  if (confirm('Bạn có chắc muốn đăng xuất?')) {
+    localStorage.removeItem('adminUser');
+    window.location.href = 'admin.html';
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   SECTION NAVIGATION
+═══════════════════════════════════════════════════ */
+function showSection(id) {
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const section = document.getElementById('section-' + id);
+  if (section) section.classList.add('active');
+  const navItem = document.getElementById('nav-' + id);
+  if (navItem) navItem.classList.add('active');
+
+  if (id === 'imports')   loadImports();
+  if (id === 'pricing')   { loadCategoryPricing(); switchPricingTab('cat'); }
+  if (id === 'orders')    loadOrders();
+  if (id === 'inventory') { populateInvCatFilter(); loadInventory(''); loadLowStock(); }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════
+   SECTION 1: PHIẾU NHẬP HÀNG
+═══════════════════════════════════════════════════ */
+function loadImports() {
+  renderImports(MOCK_IMPORT_RECEIPTS);
+}
+
+function filterImports() {
+  const q = document.getElementById('import-search').value.trim().toLowerCase();
+  if (!q) { renderImports(MOCK_IMPORT_RECEIPTS); return; }
+  const filtered = MOCK_IMPORT_RECEIPTS.filter(r =>
+    r.receipt_code.toLowerCase().includes(q) ||
+    (r.notes || '').toLowerCase().includes(q)
+  );
+  renderImports(filtered);
+}
+
+function renderImports(list) {
+  const tbody = document.getElementById('import-tbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:24px;">Không có phiếu nhập nào</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(r => {
+    const isDraft = r.status === 'draft';
+    const badge = isDraft
+      ? '<span class="badge badge-yellow">Bản nháp</span>'
+      : '<span class="badge badge-green">Hoàn thành</span>';
+    const btns = isDraft
+      ? `<button class="btn btn-info btn-sm" onclick="openImportModal(${r.id})" style="margin-right:6px;">✏️ Xem/Sửa</button>
+         <button class="btn btn-success btn-sm" onclick="completeImport(${r.id})">✅ Hoàn thành</button>`
+      : `<button class="btn btn-outline btn-sm" onclick="openImportModalReadOnly(${r.id})">👁 Xem chi tiết</button>`;
+    return `<tr>
+      <td><strong>${r.receipt_code}</strong></td>
+      <td>${formatDateOnly(r.import_date)}</td>
+      <td>${badge}</td>
+      <td><strong style="color:#16a34a;">${formatVND(r.total_cost)}</strong></td>
+      <td style="max-width:220px;white-space:normal;font-size:13px;color:#6b7280;">${r.notes || '—'}</td>
+      <td style="white-space:nowrap;">${btns}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openImportModal(id) {
+  currentImportId = id;
+  const title = document.getElementById('import-modal-title');
+  const footer = document.getElementById('import-modal-footer');
+
+  if (id === null) {
+    // New receipt
+    title.textContent = 'Thêm Phiếu Nhập Hàng';
+    document.getElementById('im-code').value = genReceiptCode();
+    document.getElementById('im-date').value = todayStr();
+    document.getElementById('im-notes').value = '';
+    document.getElementById('im-items-tbody').innerHTML = '';
+    addImportItemRow();
+    footer.innerHTML = `
+      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
+      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
+      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>`;
+  } else {
+    const r = MOCK_IMPORT_RECEIPTS.find(x => x.id === id);
+    if (!r) return;
+    title.textContent = 'Sửa Phiếu: ' + r.receipt_code;
+    document.getElementById('im-code').value = r.receipt_code;
+    document.getElementById('im-date').value = r.import_date;
+    document.getElementById('im-notes').value = r.notes || '';
+    document.getElementById('im-items-tbody').innerHTML = '';
+    r.items.forEach(item => addImportItemRow(item));
+    footer.innerHTML = `
+      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
+      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
+      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>`;
+  }
+  calcImportTotal();
+  document.getElementById('import-modal').classList.add('open');
+}
+
+function openImportModalReadOnly(id) {
+  currentImportId = id;
+  const r = MOCK_IMPORT_RECEIPTS.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('import-modal-title').textContent = 'Chi tiết Phiếu: ' + r.receipt_code;
+  document.getElementById('im-code').value = r.receipt_code;
+  document.getElementById('im-code').readOnly = true;
+  document.getElementById('im-date').value = r.import_date;
+  document.getElementById('im-date').readOnly = true;
+  document.getElementById('im-notes').value = r.notes || '';
+  document.getElementById('im-notes').readOnly = true;
+
+  const tbody = document.getElementById('im-items-tbody');
+  tbody.innerHTML = '';
+  r.items.forEach(item => {
+    const prod = getProductById(item.product_id);
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${prod ? prod.name : '—'}</td>
+      <td>${formatVND(item.import_price)}</td>
+      <td>${item.quantity}</td>
+      <td><strong>${formatVND(item.subtotal)}</strong></td>
+      <td></td>`;
+    tbody.appendChild(row);
+  });
+  calcImportTotal();
+
+  document.getElementById('import-modal-footer').innerHTML = `
+    <button class="btn btn-outline" onclick="closeModal('import-modal');
+      document.getElementById('im-code').readOnly=false;
+      document.getElementById('im-date').readOnly=false;
+      document.getElementById('im-notes').readOnly=false;">Đóng</button>`;
+
+  document.getElementById('import-modal').classList.add('open');
+}
+
+function addImportItemRow(existing) {
+  const tbody = document.getElementById('im-items-tbody');
+  const tr = document.createElement('tr');
+
+  const productOptions = MOCK_PRODUCTS.map(p =>
+    `<option value="${p.id}" ${existing && existing.product_id === p.id ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+
+  tr.innerHTML = `
+    <td><select onchange="calcImportTotal()" style="min-width:200px;">${productOptions}</select></td>
+    <td><input type="number" value="${existing ? existing.import_price : ''}" min="0" placeholder="Giá nhập" oninput="calcImportTotal()" /></td>
+    <td><input type="number" value="${existing ? existing.quantity : 1}" min="1" placeholder="SL" oninput="calcImportTotal()" /></td>
+    <td><input type="number" readonly placeholder="0" style="background:#f9fafb;color:#16a34a;font-weight:700;" /></td>
+    <td><button class="btn btn-danger btn-xs" onclick="removeImportRow(this)" title="Xóa dòng">×</button></td>`;
+
+  tbody.appendChild(tr);
+  calcImportTotal();
+}
+
+function removeImportRow(btn) {
+  btn.closest('tr').remove();
+  calcImportTotal();
+}
+
+function calcImportTotal() {
+  let total = 0;
+  document.querySelectorAll('#im-items-tbody tr').forEach(row => {
+    const inputs = row.querySelectorAll('input[type="number"]');
+    if (inputs.length < 3) return;
+    const price = parseFloat(inputs[0].value) || 0;
+    const qty   = parseFloat(inputs[1].value) || 0;
+    const sub   = price * qty;
+    inputs[2].value = sub ? sub : '';
+    total += sub;
+  });
+  document.getElementById('im-total-display').textContent = formatVND(total);
+}
+
+function collectImportFormData() {
+  const code  = document.getElementById('im-code').value.trim();
+  const date  = document.getElementById('im-date').value;
+  const notes = document.getElementById('im-notes').value.trim();
+  const items = [];
+  let valid = true;
+
+  document.querySelectorAll('#im-items-tbody tr').forEach(row => {
+    const sel    = row.querySelector('select');
+    const inputs = row.querySelectorAll('input[type="number"]');
+    if (!sel || inputs.length < 2) return;
+    const product_id   = parseInt(sel.value);
+    const import_price = parseFloat(inputs[0].value) || 0;
+    const quantity     = parseInt(inputs[1].value) || 0;
+    if (!product_id || import_price <= 0 || quantity <= 0) { valid = false; return; }
+    items.push({ product_id, import_price, quantity, subtotal: import_price * quantity });
+  });
+
+  if (!code)           { showToast('Vui lòng nhập mã phiếu', 'error'); return null; }
+  if (!date)           { showToast('Vui lòng chọn ngày nhập', 'error'); return null; }
+  if (!items.length)   { showToast('Phiếu nhập phải có ít nhất một sản phẩm', 'error'); return null; }
+  if (!valid)          { showToast('Kiểm tra lại giá nhập và số lượng (phải > 0)', 'error'); return null; }
+
+  const total_cost = items.reduce((s, i) => s + i.subtotal, 0);
+  return { receipt_code:code, import_date:date, notes, items, total_cost };
+}
+
+function saveImportDraft() {
+  const data = collectImportFormData();
+  if (!data) return;
+
+  if (currentImportId !== null) {
+    const idx = MOCK_IMPORT_RECEIPTS.findIndex(r => r.id === currentImportId);
+    if (idx !== -1) {
+      MOCK_IMPORT_RECEIPTS[idx] = { ...MOCK_IMPORT_RECEIPTS[idx], ...data, status:'draft' };
+      showToast('Đã lưu bản nháp phiếu ' + data.receipt_code, 'info');
+    }
+  } else {
+    const newRec = { id: nextReceiptId++, ...data, status:'draft' };
+    MOCK_IMPORT_RECEIPTS.push(newRec);
+    showToast('Đã tạo bản nháp phiếu ' + data.receipt_code, 'info');
+  }
+  closeModal('import-modal');
+  loadImports();
+}
+
+function completeImportFromModal() {
+  const data = collectImportFormData();
+  if (!data) return;
+  if (!confirm(`Xác nhận hoàn thành phiếu "${data.receipt_code}" và cập nhật tồn kho?`)) return;
+
+  let rec;
+  if (currentImportId !== null) {
+    const idx = MOCK_IMPORT_RECEIPTS.findIndex(r => r.id === currentImportId);
+    if (idx !== -1) {
+      MOCK_IMPORT_RECEIPTS[idx] = { ...MOCK_IMPORT_RECEIPTS[idx], ...data, status:'completed' };
+      rec = MOCK_IMPORT_RECEIPTS[idx];
+    }
+  } else {
+    rec = { id: nextReceiptId++, ...data, status:'completed' };
+    MOCK_IMPORT_RECEIPTS.push(rec);
+  }
+
+  if (rec) applyImportToStock(rec);
+  closeModal('import-modal');
+  loadImports();
+  showToast('Phiếu ' + data.receipt_code + ' đã hoàn thành – tồn kho đã cập nhật!', 'success');
+}
+
+function completeImport(id) {
+  const rec = MOCK_IMPORT_RECEIPTS.find(r => r.id === id);
+  if (!rec) return;
+  if (!confirm(`Xác nhận hoàn thành phiếu "${rec.receipt_code}" và cập nhật tồn kho?`)) return;
+  rec.status = 'completed';
+  applyImportToStock(rec);
+  loadImports();
+  showToast('Phiếu ' + rec.receipt_code + ' đã hoàn thành – tồn kho đã cập nhật!', 'success');
+}
+
+function applyImportToStock(rec) {
+  rec.items.forEach(item => {
+    const prod = getProductById(item.product_id);
+    if (prod) {
+      prod.stock += item.quantity;
+      prod.cost_price = item.import_price;
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   SECTION 2: QUẢN LÝ GIÁ BÁN
+═══════════════════════════════════════════════════ */
+function switchPricingTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab + '-btn').classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'cat')  loadCategoryPricing();
+  if (tab === 'prod') {
+    populateProdPricingFilter();
+    loadProductPricing('');
+  }
+}
+
+function loadCategoryPricing() {
+  const tbody = document.getElementById('cat-pricing-tbody');
+  tbody.innerHTML = MOCK_CATEGORIES.map(cat => {
+    const productCount = MOCK_PRODUCTS.filter(p => p.category_id === cat.id && p.profit_margin === null).length;
+    return `<tr id="cat-row-${cat.id}">
+      <td><strong>${cat.name}</strong><br/><span style="font-size:12px;color:#9ca3af;">${cat.code}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" class="margin-input" id="cat-margin-${cat.id}" value="${cat.profit_margin}" min="0" max="500" step="0.5" />
+          <span style="color:#6b7280;font-size:13px;">%</span>
+        </div>
+      </td>
+      <td><span class="badge badge-blue">${productCount} sản phẩm</span></td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="saveCategoryMargin(${cat.id})">💾 Lưu</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function saveCategoryMargin(catId) {
+  const input = document.getElementById('cat-margin-' + catId);
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0) { showToast('Tỷ lệ lợi nhuận không hợp lệ', 'error'); return; }
+  const cat = getCategoryById(catId);
+  if (cat) { cat.profit_margin = val; showToast(`Đã lưu % LN cho "${cat.name}": ${val}%`, 'success'); }
+  if (document.getElementById('tab-prod').classList.contains('active')) loadProductPricing(document.getElementById('prod-pricing-cat-filter').value);
+}
+
+function saveAllCategoryMargins() {
+  let ok = true;
+  MOCK_CATEGORIES.forEach(cat => {
+    const input = document.getElementById('cat-margin-' + cat.id);
+    if (!input) return;
+    const val = parseFloat(input.value);
+    if (isNaN(val) || val < 0) { ok = false; return; }
+    cat.profit_margin = val;
+  });
+  if (!ok) { showToast('Có giá trị không hợp lệ, vui lòng kiểm tra lại', 'error'); return; }
+  showToast('Đã lưu tỷ lệ lợi nhuận cho tất cả danh mục!', 'success');
+}
+
+function populateProdPricingFilter() {
+  const sel = document.getElementById('prod-pricing-cat-filter');
+  sel.innerHTML = '<option value="">-- Tất cả --</option>' +
+    MOCK_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+function loadProductPricing(catId) {
+  const catIdNum = catId ? parseInt(catId) : null;
+  const list = catIdNum ? MOCK_PRODUCTS.filter(p => p.category_id === catIdNum) : MOCK_PRODUCTS;
+  const tbody = document.getElementById('prod-pricing-tbody');
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;">Không có sản phẩm</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const cat = getCategoryById(p.category_id);
+    const catMargin = cat ? cat.profit_margin : 0;
+    const ownMargin = (p.profit_margin !== null && p.profit_margin !== undefined) ? p.profit_margin : '';
+    const effectiveMargin = (ownMargin !== '') ? ownMargin : catMargin;
+    const price = Math.round(p.cost_price * (1 + effectiveMargin / 100) / 1000) * 1000;
+
+    return `<tr id="prod-row-${p.id}">
+      <td><code style="font-size:12px;">${p.code}</code></td>
+      <td style="max-width:200px;white-space:normal;font-size:13px;">${p.name}</td>
+      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
+      <td style="color:#0369a1;font-weight:600;">${formatVND(p.cost_price)}</td>
+      <td style="text-align:center;">${catMargin}%</td>
+      <td>
+        <input type="number" class="margin-input" id="prod-margin-${p.id}"
+          value="${ownMargin}" min="0" max="500" step="0.5"
+          placeholder="Dùng của DM"
+          oninput="updateCalcPrice(${p.id}, ${p.cost_price}, ${catMargin})" />
+        <span style="color:#6b7280;font-size:12px;">%</span>
+      </td>
+      <td class="calc-price" id="calc-price-${p.id}">${formatVND(price)}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-success btn-xs" onclick="saveProductMargin(${p.id}, ${p.cost_price}, ${catMargin})" style="margin-right:4px;">💾 Lưu</button>
+        <button class="btn btn-outline btn-xs" onclick="clearProductMargin(${p.id}, ${p.cost_price}, ${catMargin})">✖ Xóa % riêng</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateCalcPrice(productId, costPrice, catMargin) {
+  const input = document.getElementById('prod-margin-' + productId);
+  const val = input.value !== '' ? parseFloat(input.value) : catMargin;
+  const price = Math.round(costPrice * (1 + val / 100) / 1000) * 1000;
+  const el = document.getElementById('calc-price-' + productId);
+  if (el) el.textContent = formatVND(price);
+}
+
+function saveProductMargin(productId, costPrice, catMargin) {
+  const input = document.getElementById('prod-margin-' + productId);
+  const val = input.value !== '' ? parseFloat(input.value) : null;
+  if (val !== null && (isNaN(val) || val < 0)) { showToast('Tỷ lệ LN không hợp lệ', 'error'); return; }
+  const prod = getProductById(productId);
+  if (prod) {
+    prod.profit_margin = val;
+    showToast(`Đã cập nhật % LN sản phẩm "${prod.name}"`, 'success');
+    updateCalcPrice(productId, costPrice, catMargin);
+  }
+}
+
+function clearProductMargin(productId, costPrice, catMargin) {
+  const prod = getProductById(productId);
+  if (prod) {
+    prod.profit_margin = null;
+    const input = document.getElementById('prod-margin-' + productId);
+    if (input) input.value = '';
+    updateCalcPrice(productId, costPrice, catMargin);
+    showToast(`Đã xóa % LN riêng – sản phẩm dùng % của danh mục`, 'info');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   SECTION 3: QUẢN LÝ ĐƠN HÀNG
+═══════════════════════════════════════════════════ */
+function getAllOrders() {
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem('orders')) || []; } catch {}
+  const existingCodes = new Set(MOCK_ORDERS.map(o => o.order_code));
+  const newOrders = stored.filter(o => !existingCodes.has(o.order_code));
+  return [...newOrders, ...MOCK_ORDERS];
+}
+
+function loadOrders() {
+  renderOrders(getAllOrders());
+}
+
+function filterOrders() {
+  const dateFrom = document.getElementById('order-date-from').value;
+  const dateTo   = document.getElementById('order-date-to').value;
+  const status   = document.getElementById('order-status-filter').value;
+  const q        = document.getElementById('order-search').value.trim().toLowerCase();
+
+  let list = getAllOrders();
+  if (dateFrom) list = list.filter(o => o.created_at.split(' ')[0] >= dateFrom);
+  if (dateTo)   list = list.filter(o => o.created_at.split(' ')[0] <= dateTo);
+  if (status)   list = list.filter(o => o.order_status === status);
+  if (q)        list = list.filter(o =>
+    o.order_code.toLowerCase().includes(q) ||
+    o.recipient_name.toLowerCase().includes(q)
+  );
+  renderOrders(list);
+}
+
+function resetOrderFilter() {
+  document.getElementById('order-date-from').value = '';
+  document.getElementById('order-date-to').value = '';
+  document.getElementById('order-status-filter').value = '';
+  document.getElementById('order-search').value = '';
+  loadOrders();
+}
+
+function paymentMethodLabel(m) {
+  const map = { cod:'Tiền mặt COD', bank_transfer:'Chuyển khoản', online:'Trực tuyến' };
+  return map[m] || m;
+}
+
+function orderStatusBadge(s) {
+  const map = {
+    pending:    '<span class="badge badge-yellow">Mới đặt</span>',
+    processing: '<span class="badge badge-blue">Đã xử lý</span>',
+    delivered:  '<span class="badge badge-green">Đã giao</span>',
+    cancelled:  '<span class="badge badge-red">Đã hủy</span>'
+  };
+  return map[s] || `<span class="badge">${s}</span>`;
+}
+
+function paymentStatusBadge(s) {
+  return s === 'paid'
+    ? '<span class="badge badge-green">✔ Đã TT</span>'
+    : '<span class="badge badge-orange">⏳ Chưa TT</span>';
+}
+
+function renderOrders(list) {
+  const tbody = document.getElementById('orders-tbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:24px;">Không tìm thấy đơn hàng nào</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(o => `<tr>
+    <td><strong>${o.order_code}</strong></td>
+    <td>${o.recipient_name}</td>
+    <td>${o.recipient_phone}</td>
+    <td style="font-size:13px;">${formatDate(o.created_at)}</td>
+    <td><strong style="color:#16a34a;">${formatVND(o.total_amount)}</strong></td>
+    <td style="font-size:12px;">
+      ${paymentMethodLabel(o.payment_method)}<br/>
+      ${paymentStatusBadge(o.payment_status)}
+    </td>
+    <td>${orderStatusBadge(o.order_status)}</td>
+    <td><button class="btn btn-info btn-sm" onclick="openOrderDetail(${o.id})">🔍 Chi tiết & Cập nhật</button></td>
+  </tr>`).join('');
+}
+
+function openOrderDetail(id) {
+  const o = MOCK_ORDERS.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('order-modal-title').textContent = 'Đơn hàng: ' + o.order_code;
+
+  const itemsRows = o.items.map(item => `<tr>
+    <td style="font-size:13px;">${item.product_name}</td>
+    <td style="text-align:center;">${item.quantity}</td>
+    <td style="text-align:right;">${formatVND(item.unit_price)}</td>
+    <td style="text-align:right;font-weight:700;color:#16a34a;">${formatVND(item.subtotal)}</td>
+  </tr>`).join('');
+
+  const statusButtons = ['pending','processing','delivered','cancelled'].map(s => {
+    const labels = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao', cancelled:'Hủy đơn' };
+    const classes = { pending:'btn-warning', processing:'btn-info', delivered:'btn-success', cancelled:'btn-danger' };
+    const active = o.order_status === s ? ' active-status' : '';
+    return `<button class="btn ${classes[s]}${active} btn-sm" onclick="updateOrderStatus(${id},'${s}')">${labels[s]}</button>`;
+  }).join('');
+
+  document.getElementById('order-modal-body').innerHTML = `
+    <div class="order-detail-grid">
+      <div>
+        <h4 style="color:#5b21b6;margin:0 0 12px;font-size:15px;">📋 Thông tin đơn hàng</h4>
+        <ul class="order-info-list">
+          <li><span>Mã đơn:</span><span>${o.order_code}</span></li>
+          <li><span>Ngày đặt:</span><span>${formatDate(o.created_at)}</span></li>
+          <li><span>Khách hàng:</span><span>${o.recipient_name}</span></li>
+          <li><span>Số điện thoại:</span><span>${o.recipient_phone}</span></li>
+          <li><span>Địa chỉ:</span><span>${o.recipient_address}</span></li>
+          <li><span>Thanh toán:</span><span>${paymentMethodLabel(o.payment_method)}</span></li>
+          <li><span>Trạng thái TT:</span><span>${paymentStatusBadge(o.payment_status)}</span></li>
+          <li><span>Ghi chú:</span><span>${o.notes || '—'}</span></li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="color:#5b21b6;margin:0 0 12px;font-size:15px;">🛍️ Sản phẩm</h4>
+        <div style="overflow-x:auto;">
+          <table class="ops-table" style="font-size:13px;">
+            <thead><tr><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+            <tbody>${itemsRows}</tbody>
+            <tfoot>
+              <tr style="background:#f3f0ff;">
+                <td colspan="3" style="text-align:right;font-weight:700;color:#5b21b6;">Tổng cộng:</td>
+                <td style="text-align:right;font-weight:700;color:#16a34a;font-size:15px;">${formatVND(o.total_amount)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:16px;background:#f3f0ff;border-radius:10px;">
+      <strong style="font-size:14px;color:#5b21b6;display:block;margin-bottom:10px;">🔄 Cập nhật trạng thái đơn hàng:</strong>
+      <div class="status-btn-bar" id="status-btn-bar-${id}">${statusButtons}</div>
+    </div>`;
+
+  document.getElementById('order-modal').classList.add('open');
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const o = MOCK_ORDERS.find(x => x.id === orderId);
+  if (!o) return;
+  if (o.order_status === newStatus) return;
+
+  if (newStatus === 'cancelled') {
+    if (!confirm(`Xác nhận HỦY đơn hàng ${o.order_code}?\nTồn kho sẽ được khôi phục.`)) return;
+    // Restore stock
+    o.items.forEach(item => {
+      const prod = getProductById(item.product_id);
+      if (prod) prod.stock += item.quantity;
+    });
+    showToast(`Đã hủy đơn ${o.order_code} – tồn kho đã được khôi phục`, 'warning');
+  } else {
+    const labels = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao' };
+    showToast(`Đơn ${o.order_code} → ${labels[newStatus]}`, 'success');
+  }
+
+  o.order_status = newStatus;
+
+  // Refresh buttons in modal
+  const bar = document.getElementById('status-btn-bar-' + orderId);
+  if (bar) {
+    const statusButtons = ['pending','processing','delivered','cancelled'].map(s => {
+      const labels2 = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao', cancelled:'Hủy đơn' };
+      const classes = { pending:'btn-warning', processing:'btn-info', delivered:'btn-success', cancelled:'btn-danger' };
+      const active = o.order_status === s ? ' active-status' : '';
+      return `<button class="btn ${classes[s]}${active} btn-sm" onclick="updateOrderStatus(${orderId},'${s}')">${labels2[s]}</button>`;
+    }).join('');
+    bar.innerHTML = statusButtons;
+  }
+
+  // Refresh orders table
+  filterOrders();
+}
+
+/* ═══════════════════════════════════════════════════
+   SECTION 4: QUẢN LÝ TỒN KHO
+═══════════════════════════════════════════════════ */
+function populateInvCatFilter() {
+  const sel = document.getElementById('inv-cat-filter');
+  sel.innerHTML = '<option value="">Tất cả</option>' +
+    MOCK_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+function loadInventory(catFilter) {
+  const catId = catFilter ? parseInt(catFilter) : null;
+  let list = catId ? MOCK_PRODUCTS.filter(p => p.category_id === catId) : [...MOCK_PRODUCTS];
+  // Sort by stock ascending (lowest first)
+  list.sort((a, b) => a.stock - b.stock);
+
+  const tbody = document.getElementById('inv-tbody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">Không có sản phẩm</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const cat = getCategoryById(p.category_id);
+    let statusBadge, stockClass;
+    if (p.stock === 0) {
+      statusBadge = '<span class="badge badge-red">Hết hàng</span>';
+      stockClass = 'stock-out';
+    } else if (p.stock <= 5) {
+      statusBadge = '<span class="badge badge-orange">⚠️ Sắp hết hàng</span>';
+      stockClass = 'stock-low';
+    } else {
+      statusBadge = '<span class="badge badge-green">Còn hàng</span>';
+      stockClass = 'stock-ok';
+    }
+    return `<tr>
+      <td><code style="font-size:12px;">${p.code}</code></td>
+      <td style="font-size:13px;">${p.name}</td>
+      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
+      <td class="${stockClass}" style="font-size:16px;">${p.stock}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function loadLowStock() {
+  const lowList = MOCK_PRODUCTS.filter(p => p.stock <= 5);
+  const box = document.getElementById('low-stock-alert-box');
+
+  if (!lowList.length) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+
+  const rows = lowList.map(p => {
+    const cat = getCategoryById(p.category_id);
+    const stockStyle = p.stock === 0 ? 'color:#dc2626;font-weight:700;' : 'color:#d97706;font-weight:700;';
+    return `<tr>
+      <td style="font-size:13px;">${p.name}</td>
+      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
+      <td style="${stockStyle}">${p.stock}</td>
+      <td><button class="btn btn-warning btn-xs" onclick="showSection('imports')">📋 Tạo phiếu nhập</button></td>
+    </tr>`;
+  }).join('');
+
+  box.innerHTML = `
+    <h4>⚠️ Cảnh báo hàng sắp hết
+      <span class="low-stock-count">${lowList.length} sản phẩm</span>
+    </h4>
+    <div style="overflow-x:auto;">
+      <table class="low-stock-table">
+        <thead>
+          <tr><th>Sản phẩm</th><th>Danh mục</th><th>Tồn kho</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function loadReport() {
+  const dateFrom = document.getElementById('report-date-from').value;
+  const dateTo   = document.getElementById('report-date-to').value;
+  const resultEl = document.getElementById('report-result');
+
+  if (!dateFrom || !dateTo) {
+    showToast('Vui lòng chọn khoảng thời gian báo cáo', 'error');
+    return;
+  }
+  if (dateFrom > dateTo) {
+    showToast('"Từ ngày" phải nhỏ hơn hoặc bằng "Đến ngày"', 'error');
+    return;
+  }
+
+  // For each product, calculate: opening stock, imported qty, sold qty, closing stock
+  const reportRows = MOCK_PRODUCTS.map(p => {
+    // Imported qty in period (from completed receipts)
+    const importedQty = MOCK_IMPORT_RECEIPTS
+      .filter(r => r.status === 'completed' && r.import_date >= dateFrom && r.import_date <= dateTo)
+      .reduce((sum, r) => {
+        const item = r.items.find(i => i.product_id === p.id);
+        return sum + (item ? item.quantity : 0);
+      }, 0);
+
+    // Sold qty in period (from non-cancelled orders)
+    const soldQty = MOCK_ORDERS
+      .filter(o => o.order_status !== 'cancelled' && o.created_at.split(' ')[0] >= dateFrom && o.created_at.split(' ')[0] <= dateTo)
+      .reduce((sum, o) => {
+        const item = o.items.find(i => i.product_id === p.id);
+        return sum + (item ? item.quantity : 0);
+      }, 0);
+
+    // Opening = current - imported + sold
+    const openingStock = p.stock - importedQty + soldQty;
+    const closingStock = p.stock;
+    const cat = getCategoryById(p.category_id);
+
+    return { p, cat, openingStock, importedQty, soldQty, closingStock };
+  });
+
+  const totalImport = reportRows.reduce((s, r) => s + r.importedQty, 0);
+  const totalSold   = reportRows.reduce((s, r) => s + r.soldQty, 0);
+
+  const rows = reportRows.map(({ p, cat, openingStock, importedQty, soldQty, closingStock }) => `
+    <tr>
+      <td style="font-size:13px;">${p.name}</td>
+      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
+      <td style="text-align:center;">${openingStock}</td>
+      <td style="text-align:center;color:#2563eb;font-weight:600;">${importedQty}</td>
+      <td style="text-align:center;color:#dc2626;font-weight:600;">${soldQty}</td>
+      <td style="text-align:center;font-weight:700;color:#16a34a;">${closingStock}</td>
+    </tr>`).join('');
+
+  resultEl.innerHTML = `
+    <div class="ops-table-wrap" style="margin-top:10px;">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Danh mục</th>
+            <th style="text-align:center;">Tồn đầu kỳ</th>
+            <th style="text-align:center;">Nhập trong kỳ</th>
+            <th style="text-align:center;">Xuất trong kỳ</th>
+            <th style="text-align:center;">Tồn cuối kỳ</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="2">TỔNG CỘNG</td>
+            <td style="text-align:center;">—</td>
+            <td style="text-align:center;">${totalImport}</td>
+            <td style="text-align:center;">${totalSold}</td>
+            <td style="text-align:center;">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function exportReport() {
+  showToast('Chức năng xuất file đang phát triển', 'info');
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+(function init() {
+  // Set nav-imports active by default (section-imports is already .active in HTML)
+  document.getElementById('nav-imports').classList.add('active');
+  loadImports();
+
+  // Populate category filter for product pricing on load (lazy, called when tab opens)
+  // Populate inventory cat filter on load so it's ready
+  populateInvCatFilter();
+})();
+</script>
+</body>
+</html>

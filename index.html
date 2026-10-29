@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Melody Store – Thế Giới Nhạc Cụ</title>
+  <link rel="stylesheet" href="static/css/style.css" />
+  <style>
+    /* ───── Reset & Base ───── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #1e40af;
+      --primary-hover: #1d4ed8;
+      --accent: #b45309;
+      --surface: #ffffff;
+      --bg: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --green: #16a34a;
+      --orange: #ea580c;
+      --red: #dc2626;
+      --radius: 10px;
+    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; }
+    input, select { outline: none; }
+
+    /* ───── Toast ───── */
+    #toast-container {
+      position: fixed; top: 80px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: 8px; color: #fff;
+      font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      animation: slideIn .3s ease;
+      min-width: 260px;
+    }
+    .toast.success { background: var(--green); }
+    .toast.error   { background: var(--red); }
+    .toast.info    { background: var(--primary); }
+    @keyframes slideIn { from { transform: translateX(110%); opacity:0;} to { transform: translateX(0); opacity:1;} }
+    @keyframes fadeOut { to { opacity:0; transform: translateX(110%); } }
+
+    /* ───── Header ───── */
+    header {
+      background: #0f172a;
+      position: sticky; top: 0; z-index: 800;
+      box-shadow: 0 2px 12px rgba(0,0,0,.4);
+    }
+    .header-main {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; gap: 20px;
+      padding: 14px 24px;
+    }
+    .logo {
+      font-size: 1.6rem; font-weight: 700; color: #fff;
+      white-space: nowrap; letter-spacing: -0.5px;
+    }
+    .logo span { color: #facc15; }
+    .header-search {
+      flex: 1; display: flex; align-items: center; gap: 0;
+      background: #1e293b; border-radius: 8px; overflow: hidden;
+      border: 1px solid #334155;
+    }
+    .header-search input {
+      flex: 1; background: transparent; border: none;
+      padding: 10px 16px; color: #f1f5f9; font-size: 0.95rem;
+    }
+    .header-search input::placeholder { color: #94a3b8; }
+    .header-search button {
+      background: var(--primary); color: #fff;
+      padding: 10px 20px; font-size: 0.9rem; font-weight: 600;
+      border-left: 1px solid #1d4ed8; transition: background .2s;
+    }
+    .header-search button:hover { background: var(--primary-hover); }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* Cart button */
+    .cart-btn {
+      position: relative; background: #1e293b; color: #f1f5f9;
+      border: 1px solid #334155; border-radius: 8px;
+      padding: 9px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 7px;
+      transition: background .2s;
+    }
+    .cart-btn:hover { background: #334155; }
+    .cart-badge {
+      position: absolute; top: -6px; right: -6px;
+      background: #dc2626; color: #fff; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700;
+      min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+      padding: 0 4px;
+    }
+
+    /* User area */
+    .user-area { position: relative; }
+    .btn-login, .btn-register {
+      padding: 9px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      transition: background .2s, color .2s;
+    }
+    .btn-login { background: transparent; color: #f1f5f9; border: 1px solid #475569; }
+    .btn-login:hover { background: #1e293b; }
+    .btn-register { background: var(--primary); color: #fff; }
+    .btn-register:hover { background: var(--primary-hover); }
+    .user-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 8px; padding: 8px 14px; color: #f1f5f9;
+      font-size: 0.9rem; transition: background .2s;
+    }
+    .user-btn:hover { background: #334155; }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--primary); display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: #fff;
+    }
+    .user-dropdown {
+      display: none; position: absolute; right: 0; top: calc(100% + 8px);
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+      min-width: 200px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      z-index: 900;
+    }
+    .user-area:hover .user-dropdown { display: block; }
+    .user-dropdown a, .user-dropdown button {
+      display: block; width: 100%; text-align: left;
+      padding: 12px 18px; color: #e2e8f0; font-size: 0.9rem;
+      background: transparent; transition: background .15s;
+    }
+    .user-dropdown a:hover, .user-dropdown button:hover { background: #334155; }
+    .user-dropdown .divider { height: 1px; background: #334155; margin: 4px 0; }
+    .user-dropdown .logout-btn { color: #f87171; }
+
+    /* Sub-nav */
+    .subnav-bar {
+      background: #1a2744; border-top: 1px solid #1e3a5f;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .subnav-bar::-webkit-scrollbar { display: none; }
+    .subnav-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; gap: 6px; padding: 10px 24px;
+      white-space: nowrap;
+    }
+    .cat-chip {
+      padding: 6px 18px; border-radius: 999px; font-size: 0.85rem; font-weight: 500;
+      background: transparent; color: #94a3b8; border: 1px solid #334155;
+      transition: all .2s; cursor: pointer;
+    }
+    .cat-chip:hover, .cat-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ───── Hero Banner ───── */
+    .hero {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 60%, #0f172a 100%);
+      padding: 80px 24px 60px;
+      position: relative; overflow: hidden;
+    }
+    .hero-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 40px;
+    }
+    .hero-content { flex: 1; }
+    .hero-badge {
+      display: inline-block; background: rgba(250,204,21,.15); color: #facc15;
+      border: 1px solid rgba(250,204,21,.3); border-radius: 999px;
+      padding: 5px 14px; font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+      letter-spacing: .5px;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2; margin-bottom: 16px;
+    }
+    .hero h1 em { color: #facc15; font-style: normal; }
+    .hero-sub { color: #94a3b8; font-size: 1.05rem; margin-bottom: 32px; line-height: 1.7; max-width: 500px; }
+    .hero-cta {
+      background: var(--primary); color: #fff;
+      padding: 14px 32px; border-radius: 999px; font-size: 1rem; font-weight: 700;
+      transition: background .2s, transform .2s;
+      display: inline-block;
+    }
+    .hero-cta:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .hero-deco {
+      font-size: clamp(5rem, 12vw, 11rem); font-weight: 900;
+      color: rgba(255,255,255,.04); line-height: 1; user-select: none;
+      letter-spacing: -4px; white-space: nowrap;
+    }
+
+    /* ───── Section Container ───── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── Advanced Search ───── */
+    .adv-search-section { padding: 32px 24px 0; }
+    .adv-search-card {
+      max-width: 1280px; margin: 0 auto;
+      background: var(--surface); border-radius: var(--radius);
+      padding: 28px 32px; box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      border: 1px solid var(--border);
+    }
+    .adv-search-title {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;
+      color: var(--text); display: flex; align-items: center; gap: 10px;
+    }
+    .adv-search-title::before {
+      content: '🔍'; font-size: 1rem;
+    }
+    .adv-search-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 18px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .form-group input, .form-group select {
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.95rem; color: var(--text); background: #f8fafc;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+      background: #fff;
+    }
+    .adv-search-actions { display: flex; gap: 10px; }
+    .btn-search {
+      background: var(--primary); color: #fff;
+      padding: 11px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-search:hover { background: var(--primary-hover); }
+    .btn-reset {
+      background: #f1f5f9; color: var(--muted); border: 1px solid var(--border);
+      padding: 11px 22px; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-reset:hover { background: var(--border); color: var(--text); }
+
+    /* ───── Product Section ───── */
+    .product-section { padding: 36px 24px 60px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .section-title { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+    .section-title span { color: var(--primary); }
+    .sort-select {
+      padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.9rem; background: var(--surface); color: var(--text);
+    }
+
+    /* Product Grid */
+    #product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 1100px) { #product-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 780px)  { #product-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px)  { #product-grid { grid-template-columns: 1fr; } }
+
+    /* Product Card */
+    .product-card {
+      background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      transition: transform .2s, box-shadow .2s;
+      display: flex; flex-direction: column;
+    }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+    .card-img-wrap { position: relative; overflow: hidden; }
+    .card-img {
+      width: 100%; height: 200px; object-fit: cover;
+      display: block; transition: transform .3s;
+    }
+    .product-card:hover .card-img { transform: scale(1.04); }
+    .code-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(15,23,42,.75); color: #e2e8f0;
+      border-radius: 5px; padding: 3px 9px; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: .3px; backdrop-filter: blur(4px);
+    }
+    .stock-badge {
+      position: absolute; top: 10px; right: 10px;
+      border-radius: 5px; padding: 3px 9px; font-size: 0.72rem; font-weight: 700;
+    }
+    .stock-badge.low  { background: rgba(234,88,12,.9);  color: #fff; }
+    .stock-badge.none { background: rgba(220,38,38,.9);  color: #fff; }
+    .card-body { padding: 14px 16px 0; flex: 1; display: flex; flex-direction: column; }
+    .card-cat { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
+    .card-name { font-size: 0.95rem; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 8px; flex: 1; }
+    .card-price { font-size: 1.1rem; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+    .card-stock { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; }
+    .card-stock.in  { color: var(--green); }
+    .card-stock.low { color: var(--orange); }
+    .card-stock.out { color: var(--red); }
+    .card-actions { display: flex; gap: 8px; padding: 14px 16px; }
+    .btn-detail {
+      flex: 1; padding: 9px; border-radius: 7px; font-size: 0.82rem; font-weight: 600;
+      background: #f1f5f9; color: var(--primary); border: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .btn-detail:hover { background: var(--border); }
+    .btn-cart {
+      flex: 1.2; padding: 9px; border-radius: 7px; font-size: 0.82rem; font-weight: 600;
+      background: var(--primary); color: #fff;
+      transition: background .2s;
+    }
+    .btn-cart:hover { background: var(--primary-hover); }
+    .btn-cart:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1/-1; text-align: center; padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 1rem; }
+
+    /* ───── Pagination ───── */
+    .pagination {
+      display: flex; justify-content: center; align-items: center;
+      gap: 6px; margin-top: 36px; flex-wrap: wrap;
+    }
+    .page-btn {
+      min-width: 38px; height: 38px; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      transition: all .2s; display: flex; align-items: center; justify-content: center;
+      padding: 0 10px;
+    }
+    .page-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-btn:disabled:hover { background: var(--surface); color: var(--text); border-color: var(--border); }
+
+    /* ───── Product Detail Modal ───── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(15,23,42,.7); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-inner {
+      background: var(--surface); border-radius: 16px;
+      max-width: 860px; width: 100%;
+      box-shadow: 0 24px 60px rgba(0,0,0,.3);
+      position: relative; overflow: hidden;
+      display: grid; grid-template-columns: 1fr 1fr;
+      max-height: 90vh; overflow-y: auto;
+      animation: modalIn .25s ease;
+    }
+    @keyframes modalIn { from { opacity:0; transform: scale(.95);} to { opacity:1; transform: scale(1);} }
+    @media (max-width: 640px) { .modal-inner { grid-template-columns: 1fr; } }
+    .modal-img-col { background: #f8fafc; }
+    .modal-img { width: 100%; height: 100%; min-height: 300px; object-fit: cover; display: block; }
+    .modal-info { padding: 32px 28px; display: flex; flex-direction: column; }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px;
+      background: rgba(15,23,42,.12); color: var(--text);
+      border-radius: 50%; width: 34px; height: 34px;
+      font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+      transition: background .2s; z-index: 10;
+    }
+    .modal-close:hover { background: rgba(220,38,38,.15); color: var(--red); }
+    .modal-cat { font-size: 0.78rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .modal-name { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+    .modal-code { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+    .modal-price { font-size: 1.8rem; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
+    .modal-stock-info { font-size: 0.88rem; margin-bottom: 18px; font-weight: 600; }
+    .modal-stock-info.plenty { color: var(--green); }
+    .modal-stock-info.low    { color: var(--orange); }
+    .modal-stock-info.out    { color: var(--red); }
+    .modal-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.7; margin-bottom: 24px; flex: 1; }
+    .modal-qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .modal-qty-label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+    .qty-control { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .qty-btn {
+      width: 36px; height: 36px; background: #f1f5f9; color: var(--text);
+      font-size: 1.1rem; font-weight: 700; transition: background .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-btn:hover { background: var(--border); }
+    .qty-input {
+      width: 48px; height: 36px; text-align: center;
+      border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+      font-size: 0.95rem; font-weight: 600; color: var(--text); background: #fff;
+    }
+    .btn-add-cart-modal {
+      width: 100%; padding: 13px; border-radius: 9px;
+      background: var(--primary); color: #fff;
+      font-size: 1rem; font-weight: 700;
+      transition: background .2s, transform .15s;
+    }
+    .btn-add-cart-modal:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-add-cart-modal:disabled { background: #94a3b8; transform: none; cursor: not-allowed; }
+
+    /* ───── Footer ───── */
+    footer {
+      background: #0f172a; color: #94a3b8;
+      text-align: center; padding: 24px;
+      font-size: 0.85rem; border-top: 1px solid #1e293b;
+    }
+    footer strong { color: #facc15; }
+  </style>
+</head>
+<body>
+
+<!-- ── Toast Container ── -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header>
+  <div class="header-main">
+    <!-- Logo -->
+    <a href="index.html" class="logo">MELODY<span>STORE</span></a>
+
+    <!-- Quick search -->
+    <div class="header-search">
+      <input type="text" id="quick-search" placeholder="Tìm nhạc cụ, thương hiệu…" autocomplete="off" />
+      <button onclick="handleQuickSearch()">Tìm kiếm</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <!-- Cart -->
+      <a href="#" class="cart-btn" onclick="return false;" title="Giỏ hàng">
+        🛒 Giỏ hàng
+        <span class="cart-badge" id="cart-badge">0</span>
+      </a>
+
+      <!-- User area -->
+      <div class="user-area" id="user-area">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-nav category chips -->
+  <nav class="subnav-bar">
+    <div class="subnav-inner" id="subnav-chips">
+      <button class="cat-chip active" data-cat="0" onclick="filterByCategory(0, this)">Tất cả</button>
+      <!-- Category chips injected by JS -->
+    </div>
+  </nav>
+</header>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">🎵 Nhạc Cụ Chính Hãng – Giá Tốt Nhất</div>
+      <h1>Thế Giới Dụng Cụ<br /><em>Âm Nhạc Đỉnh Cao</em></h1>
+      <p class="hero-sub">Khám phá hàng trăm nhạc cụ cao cấp từ các thương hiệu hàng đầu thế giới. Giao hàng toàn quốc, bảo hành chính hãng.</p>
+      <a class="hero-cta" href="#product-section" onclick="document.getElementById('product-section').scrollIntoView({behavior:'smooth'}); return false;">
+        Khám phá ngay ↓
+      </a>
+    </div>
+    <div class="hero-deco" aria-hidden="true">MELODY</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ ADVANCED SEARCH ═══════════════════════════ -->
+<section class="adv-search-section">
+  <div class="adv-search-card">
+    <div class="adv-search-title">Tìm Kiếm Nâng Cao Nhạc Cụ</div>
+    <form id="adv-search-form" onsubmit="handleAdvSearch(event)">
+      <div class="adv-search-grid">
+        <div class="form-group">
+          <label for="as-keyword">Tên sản phẩm / Từ khoá</label>
+          <input type="text" id="as-keyword" placeholder="VD: Guitar, Piano, Yamaha…" />
+        </div>
+        <div class="form-group">
+          <label for="as-cat">Phân loại danh mục</label>
+          <select id="as-cat">
+            <option value="0">-- Tất cả danh mục --</option>
+            <!-- Injected by JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="as-min">Giá từ (VNĐ)</label>
+          <input type="number" id="as-min" placeholder="VD: 500000" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="as-max">Giá đến (VNĐ)</label>
+          <input type="number" id="as-max" placeholder="VD: 20000000" min="0" />
+        </div>
+      </div>
+      <div class="adv-search-actions">
+        <button type="submit" class="btn-search">🔍 Tìm kiếm</button>
+        <button type="button" class="btn-reset" onclick="resetSearch()">↺ Đặt lại</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ PRODUCTS ═══════════════════════════ -->
+<section class="product-section container" id="product-section">
+  <div class="section-header">
+    <h2 class="section-title" id="section-title">Tất cả <span>nhạc cụ</span></h2>
+    <select class="sort-select" id="sort-select" onchange="applyFilters()">
+      <option value="newest">Mới nhất</option>
+      <option value="price-asc">Giá thấp → cao</option>
+      <option value="price-desc">Giá cao → thấp</option>
+      <option value="name-az">Tên A-Z</option>
+    </select>
+  </div>
+  <div id="product-grid"></div>
+  <div class="pagination" id="pagination"></div>
+</section>
+
+<!-- ═══════════════════════════ PRODUCT DETAIL MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-inner" id="modal-inner">
+    <button class="modal-close" onclick="closeModal()" title="Đóng">×</button>
+    <!-- Left: image -->
+    <div class="modal-img-col">
+      <img id="modal-img" src="" alt="" class="modal-img" />
+    </div>
+    <!-- Right: info -->
+    <div class="modal-info">
+      <p class="modal-cat" id="modal-cat"></p>
+      <h2 class="modal-name" id="modal-name"></h2>
+      <p class="modal-code" id="modal-code"></p>
+      <p class="modal-price" id="modal-price"></p>
+      <p class="modal-stock-info" id="modal-stock"></p>
+      <p class="modal-desc" id="modal-desc"></p>
+      <div class="modal-qty-row">
+        <span class="modal-qty-label">Số lượng:</span>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" class="qty-input" id="modal-qty" value="1" min="1" max="99" />
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <button class="btn-add-cart-modal" id="modal-add-btn" onclick="addToCartFromModal()">
+        🛒 Thêm vào giỏ hàng
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<footer>
+  © 2025 <strong>MelodyStore</strong> – Thế Giới Nhạc Cụ Đỉnh Cao. Tất cả quyền được bảo lưu.
+</footer>
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+<script>
+  /* ────────────────────────────────────────────────────────────────
+     MOCK DATA
+  ──────────────────────────────────────────────────────────────── */
+  const CATEGORIES = [
+    { id: 1, code: 'GUITAR', name: 'Đàn Guitar',                   profit_margin: 25 },
+    { id: 2, code: 'PIANO',  name: 'Đàn Piano & Keyboard',         profit_margin: 20 },
+    { id: 3, code: 'DRUMS',  name: 'Trống & Bộ Gõ',               profit_margin: 30 },
+    { id: 4, code: 'VIOLIN', name: 'Đàn Violin & Nhạc Cụ Dây',    profit_margin: 22 },
+    { id: 5, code: 'WIND',   name: 'Nhạc Cụ Hơi (Kèn & Sáo)',    profit_margin: 25 },
+    { id: 6, code: 'ACC',    name: 'Phụ Kiện Âm Nhạc',            profit_margin: 35 }
+  ];
+
+  const PRODUCTS = [
+    { id:1,  category_id:1, code:'GTR-YAM-F310',    name:'Đàn Guitar Acoustic Yamaha F310',            image:'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600', description:'Dòng guitar acoustic bán chạy hàng đầu cho người mới bắt đầu. Mặt đàn gỗ vân sam nguyên tấm, âm thanh vang sáng, cần đàn êm tay.',                                                                       cost_price:2500000,  margin:null, stock:15 },
+    { id:2,  category_id:1, code:'GTR-FEN-STRAT',   name:'Đàn Guitar Điện Fender Player Stratocaster', image:'https://images.unsplash.com/photo-1550985616-10810253b84d?w=600', description:'Cây đàn huyền thoại dòng Stratocaster từ Fender với 3 pickup đơn kinh điển, cần gỗ phong mượt mà.',                                                                                                          cost_price:16000000, margin:22,   stock:6  },
+    { id:3,  category_id:1, code:'GTR-TAY-214CE',   name:'Đàn Guitar Acoustic Taylor 214ce',           image:'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600', description:'Dáng Grand Auditorium danh tiếng của Taylor, tích hợp EQ ES2 cao cấp truyền tải âm thanh tự nhiên nhất khi cắm ampli.',                                                                                      cost_price:26000000, margin:18,   stock:4  },
+    { id:4,  category_id:2, code:'PNO-ROL-FP30X',   name:'Đàn Piano Điện Roland FP-30X',               image:'https://images.unsplash.com/photo-1520523839898-50712704043b?w=600', description:'Trang bị nguồn âm thanh SuperNATURAL Piano và bàn phím PHA-4 chuẩn cơ mang lại cảm giác phím nặng chân thực.',                                                                                               cost_price:15500000, margin:null, stock:8  },
+    { id:5,  category_id:2, code:'PNO-YAM-P45',     name:'Đàn Piano Điện Yamaha P-45B',                image:'https://images.unsplash.com/photo-1552422535-c45813c61732?w=600', description:'Thiết kế gọn gàng, công nghệ GHS tái hiện độ nặng phím chân thực, âm thanh đại dương cầm AWM sống động.',                                                                                                       cost_price:9800000,  margin:null, stock:12 },
+    { id:6,  category_id:3, code:'DRM-PEA-ROAD',    name:'Bộ Trống Cơ Pearl Roadshow RS525SC',         image:'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=600', description:'Bộ trống 5 món tiêu chuẩn từ hãng Pearl, vỏ gỗ bạch dương 9 lớp, âm thanh uy lực, kèm cymbals và ghế ngồi.',                                                                                               cost_price:13200000, margin:null, stock:5  },
+    { id:7,  category_id:3, code:'DRM-ROL-TD1DMK',  name:'Bộ Trống Điện Tử Roland TD-1DMK',           image:'https://images.unsplash.com/photo-1543443436-1216a30141f2?w=600', description:'Toàn bộ mặt pad bằng lưới kép cao cấp cho cảm giác gõ như trống thật và độ ồn cực thấp.',                                                                                                                       cost_price:16500000, margin:25,   stock:7  },
+    { id:8,  category_id:4, code:'VLN-YAM-V5SC',    name:'Đàn Violin Yamaha V5SC 4/4 Full Size',       image:'https://images.unsplash.com/photo-1612225330812-01a9c6b355ec?w=600', description:'Chế tác thủ công từ gỗ vân sam và phong sấy tự nhiên, hoàn thiện bằng lớp véc-ni bóng bẩy.',                                                                                                                  cost_price:8500000,  margin:null, stock:8  },
+    { id:9,  category_id:5, code:'WND-YAM-YFL222',  name:'Kèn Sáo Flute Yamaha YFL-222',               image:'https://images.unsplash.com/photo-1573871669414-010dbf73ca84?w=600', description:'Thân kèn mạ bạc nickel, lỗ bấm khép kín, phản hồi âm thanh nhanh và dễ thổi.',                                                                                                                               cost_price:11200000, margin:null, stock:7  },
+    { id:10, category_id:5, code:'WND-YAM-YAS280',  name:'Kèn Saxophone Alto Yamaha YAS-280',          image:'https://images.unsplash.com/photo-1525994886773-080587e161c2?w=600', description:'Kèn Alto Saxophone tiêu chuẩn vàng, cơ chế phím bấm mượt mà, âm sắc ấm áp chuẩn ngữ điệu.',                                                                                                                 cost_price:24500000, margin:20,   stock:4  },
+    { id:11, category_id:6, code:'ACC-KOR-TM60',    name:'Máy Đập Nhịp & Lên Dây Korg TM-60',          image:'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600', description:'Màn hình LCD lớn, tích hợp Tuner và Metronome tiện lợi trong 1 thiết bị.',                                                                                                                                   cost_price:680000,   margin:null, stock:30 },
+    { id:12, category_id:6, code:'ACC-DAD-EJ16',    name:"Bộ Dây Đàn Guitar D'Addario EJ16",           image:'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600', description:'Dây Phosphor Bronze chính hãng Mỹ, âm sắc ấm vang cân bằng, độ bền vượt trội.',                                                                                                                              cost_price:185000,   margin:50,   stock:45 }
+  ];
+
+  /* ────────────────────────────────────────────────────────────────
+     STATE
+  ──────────────────────────────────────────────────────────────── */
+  const PAGE_SIZE = 8;
+  let currentPage    = 1;
+  let filteredList   = [...PRODUCTS];
+  let activeCatId    = 0;        // 0 = all
+  let quickKeyword   = '';
+  let advKeyword     = '';
+  let advCatId       = 0;
+  let advMinPrice    = null;
+  let advMaxPrice    = null;
+  let currentModalId = null;
+
+  /* ────────────────────────────────────────────────────────────────
+     HELPERS
+  ──────────────────────────────────────────────────────────────── */
+  function formatVND(amount) {
+    return amount.toLocaleString('vi-VN') + ' ₫';
+  }
+
+  function calcPrice(product) {
+    const cat    = CATEGORIES.find(c => c.id === product.category_id);
+    const margin = product.margin !== null && product.margin !== undefined
+      ? product.margin
+      : cat.profit_margin;
+    return Math.round(product.cost_price * (1 + margin / 100) / 1000) * 1000;
+  }
+
+  function getCategoryName(catId) {
+    const c = CATEGORIES.find(c => c.id === catId);
+    return c ? c.name : '';
+  }
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut .4s ease forwards';
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     USER AUTH (localStorage)
+  ──────────────────────────────────────────────────────────────── */
+  function getUser() {
+    try { 
+      return JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('ms_user')) || null; 
+    } catch { return null; }
+  }
+
+  function renderUserArea() {
+    const area = document.getElementById('user-area');
+    const user = getUser();
+    if (user) {
+      const displayName = user.full_name || user.name || user.username || 'Tài khoản';
+      const initials = displayName.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+      area.innerHTML = `
+        <button class="user-btn">
+          <div class="user-avatar">${initials}</div>
+          ${displayName} ▾
+        </button>
+        <div class="user-dropdown">
+          <a href="customer.html?tab=profile">👤 Hồ sơ cá nhân</a>
+          <a href="customer.html?tab=orders">📋 Lịch sử đơn hàng</a>
+          <div class="divider"></div>
+          <button class="logout-btn" onclick="doLogout()">🚪 Đăng xuất</button>
+        </div>`;
+    } else {
+      area.innerHTML = `
+        <a href="customer.html?tab=auth" class="btn-login">Đăng nhập</a>
+        <a href="customer.html?tab=auth" class="btn-register">Đăng ký</a>`;
+    }
+  }
+
+  function doLogout() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('ms_user');
+    showToast('Đã đăng xuất thành công!', 'info');
+    renderUserArea();
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     CART
+  ──────────────────────────────────────────────────────────────── */
+  function getCart() {
+    try {
+      const items = JSON.parse(localStorage.getItem('cartItems')) || JSON.parse(localStorage.getItem('ms_cart')) || [];
+      return items.map(i => ({
+        product_id: i.product_id || i.id,
+        quantity: i.quantity || i.qty || 1
+      }));
+    } catch { return []; }
+  }
+
+  function saveCart(cart) {
+    localStorage.setItem('cartItems', JSON.stringify(cart));
+    localStorage.setItem('ms_cart', JSON.stringify(cart.map(i => ({ id: i.product_id, qty: i.quantity }))));
+  }
+
+  function updateCartBadge() {
+    const cart  = getCart();
+    const total = cart.reduce((s, i) => s + i.quantity, 0);
+    const badge = document.getElementById('cart-badge');
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'flex' : 'none';
+  }
+
+  function addToCart(productId, qty = 1) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+    if (product.stock === 0) { showToast('Sản phẩm đã hết hàng!', 'error'); return; }
+    const cart = getCart();
+    const idx  = cart.findIndex(i => i.product_id === productId);
+    if (idx > -1) {
+      cart[idx].quantity = Math.min(cart[idx].quantity + qty, product.stock);
+    } else {
+      cart.push({ product_id: productId, quantity: Math.min(qty, product.stock) });
+    }
+    saveCart(cart);
+    updateCartBadge();
+    showToast(`Đã thêm "${product.name}" vào giỏ hàng!`, 'success');
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     CATEGORY CHIPS
+  ──────────────────────────────────────────────────────────────── */
+  function buildSubnav() {
+    const subnav = document.getElementById('subnav-chips');
+    CATEGORIES.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className  = 'cat-chip';
+      btn.dataset.cat = cat.id;
+      btn.textContent = cat.name;
+      btn.onclick = () => filterByCategory(cat.id, btn);
+      subnav.appendChild(btn);
+    });
+  }
+
+  function filterByCategory(catId, el) {
+    activeCatId = catId;
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const title = document.getElementById('section-title');
+    if (catId === 0) {
+      title.innerHTML = 'Tất cả <span>nhạc cụ</span>';
+    } else {
+      const cat = CATEGORIES.find(c => c.id === catId);
+      title.innerHTML = `<span>${cat.name}</span>`;
+    }
+    currentPage = 1;
+    applyFilters();
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     ADVANCED SEARCH SELECT POPULATE
+  ──────────────────────────────────────────────────────────────── */
+  function buildAdvSearchSelect() {
+    const sel = document.getElementById('as-cat');
+    CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     QUICK SEARCH
+  ──────────────────────────────────────────────────────────────── */
+  function handleQuickSearch() {
+    quickKeyword = document.getElementById('quick-search').value.trim().toLowerCase();
+    currentPage  = 1;
+    applyFilters();
+  }
+
+  document.getElementById('quick-search').addEventListener('keyup', function(e) {
+    quickKeyword = this.value.trim().toLowerCase();
+    currentPage  = 1;
+    applyFilters();
+  });
+
+  /* ────────────────────────────────────────────────────────────────
+     ADVANCED SEARCH
+  ──────────────────────────────────────────────────────────────── */
+  function handleAdvSearch(e) {
+    e.preventDefault();
+    advKeyword  = document.getElementById('as-keyword').value.trim().toLowerCase();
+    advCatId    = parseInt(document.getElementById('as-cat').value) || 0;
+    advMinPrice = parseFloat(document.getElementById('as-min').value) || null;
+    advMaxPrice = parseFloat(document.getElementById('as-max').value) || null;
+    currentPage = 1;
+    // Sync category chip if category selected in advanced search
+    if (advCatId !== 0) {
+      activeCatId = advCatId;
+      document.querySelectorAll('.cat-chip').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.cat) === advCatId);
+      });
+      const cat = CATEGORIES.find(c => c.id === advCatId);
+      document.getElementById('section-title').innerHTML = `<span>${cat.name}</span>`;
+    } else {
+      activeCatId = 0;
+      document.querySelectorAll('.cat-chip').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.cat) === 0);
+      });
+      document.getElementById('section-title').innerHTML = 'Tất cả <span>nhạc cụ</span>';
+    }
+    applyFilters();
+    document.getElementById('product-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetSearch() {
+    document.getElementById('adv-search-form').reset();
+    advKeyword  = '';
+    advCatId    = 0;
+    advMinPrice = null;
+    advMaxPrice = null;
+    quickKeyword = '';
+    document.getElementById('quick-search').value = '';
+    activeCatId = 0;
+    document.querySelectorAll('.cat-chip').forEach(c => {
+      c.classList.toggle('active', parseInt(c.dataset.cat) === 0);
+    });
+    document.getElementById('section-title').innerHTML = 'Tất cả <span>nhạc cụ</span>';
+    currentPage = 1;
+    applyFilters();
+    showToast('Đã đặt lại bộ lọc.', 'info');
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     FILTER + SORT + PAGINATE
+  ──────────────────────────────────────────────────────────────── */
+  function applyFilters() {
+    const sortVal = document.getElementById('sort-select').value;
+
+    // Combined keyword (quick search OR advanced keyword)
+    const kw = advKeyword || quickKeyword;
+
+    let list = PRODUCTS.filter(p => {
+      // Category: active chip takes precedence; adv overrides it when set
+      const catFilter = activeCatId !== 0 ? activeCatId : advCatId;
+      if (catFilter !== 0 && p.category_id !== catFilter) return false;
+
+      // Keyword
+      if (kw) {
+        const hay = (p.name + ' ' + p.code + ' ' + p.description).toLowerCase();
+        if (!hay.includes(kw)) return false;
+      }
+
+      // Price range
+      const price = calcPrice(p);
+      if (advMinPrice !== null && price < advMinPrice) return false;
+      if (advMaxPrice !== null && price > advMaxPrice) return false;
+
+      return true;
+    });
+
+    // Sort
+    if (sortVal === 'price-asc')  list.sort((a,b) => calcPrice(a) - calcPrice(b));
+    if (sortVal === 'price-desc') list.sort((a,b) => calcPrice(b) - calcPrice(a));
+    if (sortVal === 'name-az')    list.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+    // 'newest' keeps original array order (by id desc)
+    if (sortVal === 'newest')     list.sort((a,b) => b.id - a.id);
+
+    filteredList = list;
+    renderProducts(filteredList);
+    renderPagination();
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     RENDER PRODUCTS
+  ──────────────────────────────────────────────────────────────── */
+  function renderProducts(list) {
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = '';
+
+    if (list.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎸</div>
+          <p>Không tìm thấy sản phẩm nào phù hợp.<br/>Hãy thử thay đổi bộ lọc của bạn.</p>
+        </div>`;
+      return;
+    }
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = list.slice(start, start + PAGE_SIZE);
+
+    page.forEach(p => {
+      const price   = calcPrice(p);
+      const catName = getCategoryName(p.category_id);
+      let stockBadge = '';
+      let stockClass = 'in';
+      let stockLabel = `Còn hàng (${p.stock})`;
+      if (p.stock === 0) {
+        stockBadge = `<span class="stock-badge none">Hết hàng</span>`;
+        stockClass = 'out'; stockLabel = 'Hết hàng';
+      } else if (p.stock <= 5) {
+        stockBadge = `<span class="stock-badge low">Còn ít hàng</span>`;
+        stockClass = 'low'; stockLabel = `Còn ít (${p.stock})`;
+      }
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="card-img-wrap">
+          <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'" />
+          <span class="code-badge">${p.code}</span>
+          ${stockBadge}
+        </div>
+        <div class="card-body">
+          <p class="card-cat">${catName}</p>
+          <p class="card-name">${p.name}</p>
+          <p class="card-price">${formatVND(price)}</p>
+          <p class="card-stock ${stockClass}">${stockLabel}</p>
+        </div>
+        <div class="card-actions">
+          <button class="btn-detail" onclick="openProductDetail(${p.id})">Xem chi tiết</button>
+          <button class="btn-cart" onclick="addToCart(${p.id})" ${p.stock===0?'disabled':''}>
+            ${p.stock===0 ? 'Hết hàng' : 'Thêm vào giỏ'}
+          </button>
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     PAGINATION
+  ──────────────────────────────────────────────────────────────── */
+  function renderPagination() {
+    const total  = filteredList.length;
+    const pages  = Math.ceil(total / PAGE_SIZE);
+    const pag    = document.getElementById('pagination');
+    pag.innerHTML = '';
+    if (pages <= 1) return;
+
+    // Prev
+    const prev = document.createElement('button');
+    prev.className = 'page-btn';
+    prev.textContent = '‹';
+    prev.disabled = currentPage === 1;
+    prev.onclick  = () => { if (currentPage > 1) { currentPage--; renderProducts(filteredList); renderPagination(); } };
+    pag.appendChild(prev);
+
+    // Pages
+    const range = getPageRange(currentPage, pages);
+    range.forEach(p => {
+      if (p === '…') {
+        const dots = document.createElement('span');
+        dots.style.padding = '0 6px'; dots.style.color = '#94a3b8';
+        dots.textContent = '…';
+        pag.appendChild(dots);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+        btn.textContent = p;
+        btn.onclick = () => { currentPage = p; renderProducts(filteredList); renderPagination(); };
+        pag.appendChild(btn);
+      }
+    });
+
+    // Next
+    const next = document.createElement('button');
+    next.className = 'page-btn';
+    next.textContent = '›';
+    next.disabled = currentPage === pages;
+    next.onclick  = () => { if (currentPage < pages) { currentPage++; renderProducts(filteredList); renderPagination(); } };
+    pag.appendChild(next);
+  }
+
+  function getPageRange(cur, total) {
+    if (total <= 7) return Array.from({length: total}, (_, i) => i+1);
+    const pages = [];
+    pages.push(1);
+    if (cur > 3)       pages.push('…');
+    for (let i = Math.max(2, cur-1); i <= Math.min(total-1, cur+1); i++) pages.push(i);
+    if (cur < total-2) pages.push('…');
+    pages.push(total);
+    return pages;
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     PRODUCT DETAIL MODAL
+  ──────────────────────────────────────────────────────────────── */
+  function openProductDetail(productId) {
+    const p     = PRODUCTS.find(pr => pr.id === productId);
+    if (!p) return;
+    currentModalId = productId;
+    const price   = calcPrice(p);
+    const catName = getCategoryName(p.category_id);
+
+    document.getElementById('modal-img').src = p.image;
+    document.getElementById('modal-img').alt = p.name;
+    document.getElementById('modal-cat').textContent  = catName;
+    document.getElementById('modal-name').textContent = p.name;
+    document.getElementById('modal-code').textContent = 'Mã: ' + p.code;
+    document.getElementById('modal-price').textContent = formatVND(price);
+    document.getElementById('modal-desc').textContent = p.description;
+
+    const stockEl  = document.getElementById('modal-stock');
+    const addBtn   = document.getElementById('modal-add-btn');
+    const qtyInput = document.getElementById('modal-qty');
+    qtyInput.value = 1;
+    qtyInput.max   = p.stock;
+
+    if (p.stock === 0) {
+      stockEl.textContent = '✗ Hết hàng';
+      stockEl.className = 'modal-stock-info out';
+      addBtn.disabled = true;
+    } else if (p.stock <= 5) {
+      stockEl.textContent = `⚠ Còn ít hàng (còn ${p.stock} sản phẩm)`;
+      stockEl.className = 'modal-stock-info low';
+      addBtn.disabled = false;
+    } else {
+      stockEl.textContent = `✓ Còn hàng (${p.stock} sản phẩm)`;
+      stockEl.className = 'modal-stock-info plenty';
+      addBtn.disabled = false;
+    }
+
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+    currentModalId = null;
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function changeQty(delta) {
+    const input = document.getElementById('modal-qty');
+    const p = PRODUCTS.find(pr => pr.id === currentModalId);
+    let val = parseInt(input.value) + delta;
+    val = Math.max(1, Math.min(val, p ? p.stock : 99));
+    input.value = val;
+  }
+
+  function addToCartFromModal() {
+    if (!currentModalId) return;
+    const qty = parseInt(document.getElementById('modal-qty').value) || 1;
+    addToCart(currentModalId, qty);
+    closeModal();
+  }
+
+  /* ────────────────────────────────────────────────────────────────
+     INIT
+  ──────────────────────────────────────────────────────────────── */
+  function init() {
+    buildSubnav();
+    buildAdvSearchSelect();
+    renderUserArea();
+    updateCartBadge();
+    applyFilters();
+  }
+
+  init();
+</script>
+</body>
+</html>

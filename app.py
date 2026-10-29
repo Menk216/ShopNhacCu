@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, g
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, g, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import database
 
@@ -84,7 +84,25 @@ def inject_global_vars():
 
 @app.route('/')
 def home():
+    if os.path.exists(os.path.join(app.root_path, 'index.html')):
+        return send_from_directory(app.root_path, 'index.html')
     return render_template('index.html')
+
+@app.route('/index.html')
+def serve_index_html():
+    return send_from_directory(app.root_path, 'index.html')
+
+@app.route('/customer.html')
+def serve_customer_html():
+    return send_from_directory(app.root_path, 'customer.html')
+
+@app.route('/admin.html')
+def serve_admin_html():
+    return send_from_directory(app.root_path, 'admin.html')
+
+@app.route('/admin-ops.html')
+def serve_admin_ops_html():
+    return send_from_directory(app.root_path, 'admin-ops.html')
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
