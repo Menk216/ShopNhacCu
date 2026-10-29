@@ -106,93 +106,53 @@ def serve_admin_ops_html():
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    return render_template('product_detail.html', product_id=product_id)
+    return redirect(f'/?product_id={product_id}')
 
 @app.route('/cart')
-@login_required
 def cart_page():
-    return render_template('cart.html')
+    return redirect('/customer.html?tab=cart')
 
 @app.route('/checkout')
-@login_required
 def checkout_page():
-    return render_template('checkout.html')
+    return redirect('/customer.html?tab=checkout')
 
 @app.route('/order-success/<order_code>')
-@login_required
 def order_success_page(order_code):
-    return render_template('order_success.html', order_code=order_code)
+    return redirect('/customer.html?tab=orders')
 
 @app.route('/orders')
-@login_required
 def customer_orders_page():
-    return render_template('orders.html')
+    return redirect('/customer.html?tab=orders')
 
 @app.route('/profile')
-@login_required
 def profile_page():
-    return render_template('profile.html')
+    return redirect('/customer.html?tab=profile')
 
 @app.route('/login')
 def customer_login_page():
-    if g.user:
-        return redirect(url_for('home'))
-    return render_template('login.html')
+    return redirect('/customer.html?tab=auth')
 
 @app.route('/register')
 def customer_register_page():
-    if g.user:
-        return redirect(url_for('home'))
-    return render_template('login.html', register=True)
+    return redirect('/customer.html?tab=auth')
 
 # ----------------- Admin Page Routes -----------------
 
 @app.route('/admin')
 @app.route('/admin/dashboard')
-@admin_required
-def admin_dashboard_page():
-    return render_template('admin/dashboard.html')
-
 @app.route('/admin/login')
-def admin_login_page():
-    if g.admin:
-        return redirect(url_for('admin_dashboard_page'))
-    return render_template('admin/login.html')
-
 @app.route('/admin/users')
-@admin_required
-def admin_users_page():
-    return render_template('admin/users.html')
-
 @app.route('/admin/categories')
-@admin_required
-def admin_categories_page():
-    return render_template('admin/categories.html')
-
 @app.route('/admin/products')
-@admin_required
-def admin_products_page():
-    return render_template('admin/products.html')
+def admin_pages_redirect():
+    return redirect('/admin.html')
 
 @app.route('/admin/imports')
-@admin_required
-def admin_imports_page():
-    return render_template('admin/imports.html')
-
 @app.route('/admin/pricing')
-@admin_required
-def admin_pricing_page():
-    return render_template('admin/pricing.html')
-
 @app.route('/admin/orders')
-@admin_required
-def admin_orders_page():
-    return render_template('admin/orders.html')
-
 @app.route('/admin/inventory')
-@admin_required
-def admin_inventory_page():
-    return render_template('admin/inventory.html')
+def admin_ops_pages_redirect():
+    return redirect('/admin-ops.html')
 
 
 # ========================================================
