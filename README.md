@@ -34,10 +34,6 @@ Sau khi chạy, truy cập vào trình duyệt:
 | Phân hệ | Tên đăng nhập | Mật khẩu | Ghi chú |
 |---|---|---|---|
 | **Admin tối cao (ID: 1)** | `admin` | `admin123` | Quản trị toàn quyền, được bảo vệ không thể bị khóa |
-| **Khách hàng 1** | `khachhang1` | `123456` | Đã có sẵn lịch sử đơn hàng và địa chỉ |
-| **Khách hàng 2** | `khachhang2` | `123456` | Tài khoản khách hàng thông thường |
-| **Khách hàng bị khóa** | `khachhang_bi_khoa` | `123456` | Tài khoản thử nghiệm tính năng chặn đăng nhập |
-
 ---
 
 ## 3. Cấu trúc thư mục dự án
