@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% set page_titles = {
+    'index': 'Melody Store - Thế Giới Nhạc Cụ & Âm Thanh Cao Cấp',
+    'product_detail': 'Chi Tiết Nhạc Cụ - Melody Store',
+    'cart': 'Giỏ Hàng - Melody Store',
+    'checkout': 'Thanh Toán & Đặt Hàng - Melody Store',
+    'order_success': 'Đặt Hàng Thành Công - Melody Store',
+    'orders': 'Lịch Sử Mua Hàng - Melody Store',
+    'profile': 'Hồ Sơ Cá Nhân - Melody Store',
+    'login': 'Đăng Nhập / Đăng Ký - Melody Store'
+} %}
+
+{% block title %}{{ page_titles[page] }}{% endblock %}
+
+{% block content %}
+    {% include 'fragments/customer/' ~ page ~ '.j2' %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'admin/base_admin.html' %}
+
+{% set page_titles = {
+    'dashboard': ('Bảng Điều Khiển Quản Trị - Melody Store', 'Tổng Quan Tình Hình Kinh Doanh'),
+    'users': ('Quản Lý Người Dùng & Quản Trị Viên - Melody Store Admin', 'Quản Lý Tài Khoản Người Dùng & Phân Quyền'),
+    'categories': ('Quản Lý Loại Sản Phẩm - Melody Store Admin', 'Quản Lý Loại Sản Phẩm Nhạc Cụ'),
+    'products': ('Quản Lý Sản Phẩm - Melody Store Admin', 'Quản Lý Danh Mục Sản Phẩm Nhạc Cụ'),
+    'imports': ('Quản Lý Nhập Hàng - Melody Store Admin', 'Quản Lý Nhập Kho Sản Phẩm'),
+    'pricing': ('Quản Lý Giá Bán & % Lợi Nhuận - Melody Store Admin', 'Quản Lý Giá Bán & Tỉ Lệ % Lợi Nhuận'),
+    'orders': ('Quản Lý Đơn Đặt Hàng - Melody Store Admin', 'Quản Lý Đơn Đặt Hàng Của Khách Hàng'),
+    'inventory': ('Quản Lý Tồn Kho & Báo Cáo Nhập Xuất Tồn - Melody Store Admin', 'Quản Lý Tồn Kho & Báo Cáo Nhập - Xuất - Tồn')
+} %}
+
+{% block title %}{{ page_titles[page][0] }}{% endblock %}
+{% block page_title %}{{ page_titles[page][1] }}{% endblock %}
+
+{% block content %}
+    {% include 'fragments/admin/' ~ page ~ '.j2' %}
+{% endblock %}
