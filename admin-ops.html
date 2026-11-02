@@ -672,7 +672,7 @@ function renderImports(list) {
   }).join('');
 }
 
-function openImportModal(id, preselectedProductId = null) {
+function openImportModal(id) {
   currentImportId = id;
   const title = document.getElementById('import-modal-title');
   const footer = document.getElementById('import-modal-footer');
@@ -684,12 +684,7 @@ function openImportModal(id, preselectedProductId = null) {
     document.getElementById('im-date').value = todayStr();
     document.getElementById('im-notes').value = '';
     document.getElementById('im-items-tbody').innerHTML = '';
-    if (preselectedProductId) {
-      const p = getProductById(preselectedProductId);
-      addImportItemRow({ product_id: preselectedProductId, import_price: p ? p.cost_price : 0, quantity: 5 });
-    } else {
-      addImportItemRow();
-    }
+    addImportItemRow();
     footer.innerHTML = `
       <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
       <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
@@ -1229,11 +1224,6 @@ function loadInventory(catFilter) {
   }).join('');
 }
 
-function createImportForProduct(productId) {
-  showSection('imports');
-  openImportModal(null, productId);
-}
-
 function loadLowStock() {
   const lowList = MOCK_PRODUCTS.filter(p => p.stock <= 5);
   const box = document.getElementById('low-stock-alert-box');
@@ -1251,7 +1241,7 @@ function loadLowStock() {
       <td style="font-size:13px;">${p.name}</td>
       <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
       <td style="${stockStyle}">${p.stock}</td>
-      <td><button class="btn btn-warning btn-xs" onclick="createImportForProduct(${p.id})">📋 Tạo phiếu nhập</button></td>
+      <td><button class="btn btn-warning btn-xs" onclick="showSection('imports')">📋 Tạo phiếu nhập</button></td>
     </tr>`;
   }).join('');
 
