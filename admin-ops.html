@@ -3,1358 +3,1997 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Operations – Melody Store</title>
-  <link rel="stylesheet" href="static/css/admin.css" />
+  <title>Quản Trị Vận Hành & Nghiệp Vụ - Melody Store</title>
+  <script>
+    (function () {
+      try {
+        var admin = JSON.parse(localStorage.getItem('melodystore_v3_adminUser'));
+        if (admin && admin.role === 'admin') {
+          document.documentElement.classList.add('is-admin');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <style>
-    /* ── Toast ── */
-    #toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
-    .toast { padding:12px 20px; border-radius:8px; color:#fff; font-size:14px; font-weight:500; opacity:0; animation:slideIn .3s forwards; min-width:260px; box-shadow:0 4px 16px rgba(0,0,0,.18); }
-    .toast.success { background:#22c55e; }
-    .toast.error   { background:#ef4444; }
-    .toast.info    { background:#3b82f6; }
-    .toast.warning { background:#f59e0b; }
-    @keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
-
-    /* ── Badges ── */
-    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; }
-    .badge-yellow { background:#fef3c7; color:#92400e; }
-    .badge-green  { background:#d1fae5; color:#065f46; }
-    .badge-red    { background:#fee2e2; color:#991b1b; }
-    .badge-blue   { background:#dbeafe; color:#1e40af; }
-    .badge-orange { background:#ffedd5; color:#9a3412; }
-
-    /* ── Section ── */
-    .admin-section { display:none; }
-    .admin-section.active { display:block; }
-
-    /* ── Tabs ── */
-    .tab-bar { display:flex; gap:0; border-bottom:2px solid #e5e7eb; margin-bottom:20px; }
-    .tab-btn { padding:10px 22px; cursor:pointer; border:none; background:none; font-size:14px; font-weight:600; color:#6b7280; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .2s; }
-    .tab-btn.active { color:#7c3aed; border-bottom-color:#7c3aed; }
-    .tab-pane { display:none; }
-    .tab-pane.active { display:block; }
-
-    /* ── Toolbar ── */
-    .ops-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
-    .ops-toolbar input, .ops-toolbar select { padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
-    .ops-toolbar input:focus, .ops-toolbar select:focus { outline:none; border-color:#7c3aed; }
-
-    /* ── Table ── */
-    .ops-table { width:100%; border-collapse:collapse; font-size:14px; }
-    .ops-table th { background:#f3f0ff; color:#5b21b6; padding:10px 12px; text-align:left; font-weight:700; border-bottom:2px solid #ddd6fe; white-space:nowrap; }
-    .ops-table td { padding:10px 12px; border-bottom:1px solid #f0eeff; vertical-align:middle; }
-    .ops-table tr:hover td { background:#faf5ff; }
-    .ops-table-wrap { overflow-x:auto; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.07); }
-
-    /* ── Buttons ── */
-    .btn { display:inline-flex; align-items:center; gap:5px; padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .15s; }
-    .btn-primary   { background:#7c3aed; color:#fff; }
-    .btn-primary:hover   { background:#6d28d9; }
-    .btn-success   { background:#22c55e; color:#fff; }
-    .btn-success:hover   { background:#16a34a; }
-    .btn-danger    { background:#ef4444; color:#fff; }
-    .btn-danger:hover    { background:#dc2626; }
-    .btn-info      { background:#3b82f6; color:#fff; }
-    .btn-info:hover      { background:#2563eb; }
-    .btn-warning   { background:#f59e0b; color:#fff; }
-    .btn-warning:hover   { background:#d97706; }
-    .btn-outline   { background:#fff; border:1.5px solid #7c3aed; color:#7c3aed; }
-    .btn-outline:hover   { background:#f3f0ff; }
-    .btn-sm { padding:5px 10px; font-size:12px; }
-    .btn-xs { padding:3px 8px; font-size:11px; border-radius:5px; }
-
-    /* ── Modal ── */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; justify-content:center; align-items:flex-start; overflow-y:auto; padding:30px 10px; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:#fff; border-radius:14px; width:100%; max-width:860px; box-shadow:0 8px 40px rgba(0,0,0,.22); animation:popIn .2s; }
-    .modal-box.modal-lg { max-width:1050px; }
-    @keyframes popIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
-    .modal-header { padding:18px 24px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }
-    .modal-header h3 { margin:0; font-size:18px; color:#5b21b6; }
-    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#9ca3af; }
-    .modal-close:hover { color:#ef4444; }
-    .modal-body { padding:24px; }
-    .modal-footer { padding:16px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; }
-
-    /* ── Form ── */
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .form-grid.col3 { grid-template-columns:1fr 1fr 1fr; }
-    .form-group { display:flex; flex-direction:column; gap:5px; }
-    .form-group.full { grid-column:1/-1; }
-    .form-group label { font-size:13px; font-weight:600; color:#374151; }
-    .form-group input, .form-group select, .form-group textarea { padding:9px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; font-family:inherit; resize:none; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#7c3aed; }
-    .form-group input[readonly], .form-group input[disabled] { background:#f9fafb; color:#6b7280; }
-
-    /* ── Import receipt items ── */
-    .import-items-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
-    .import-items-table th { background:#f3f0ff; color:#5b21b6; padding:8px 10px; text-align:left; border-bottom:2px solid #ddd6fe; }
-    .import-items-table td { padding:7px 8px; border-bottom:1px solid #f0eeff; vertical-align:middle; }
-    .import-items-table select, .import-items-table input { padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box; }
-    .import-items-table select:focus, .import-items-table input:focus { outline:none; border-color:#7c3aed; }
-    .import-total-bar { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding:12px 0 4px; font-weight:700; font-size:15px; color:#5b21b6; }
-
-    /* ── Pricing inline inputs ── */
-    .margin-input { width:80px; padding:5px 8px; border:1.5px solid #d1d5db; border-radius:6px; font-size:13px; text-align:center; }
-    .margin-input:focus { outline:none; border-color:#7c3aed; }
-    .calc-price { font-weight:700; color:#16a34a; }
-
-    /* ── Low stock warning ── */
-    .low-stock-box { background:#fff7ed; border:2px solid #f97316; border-radius:12px; padding:18px 22px; margin-bottom:24px; }
-    .low-stock-box h4 { margin:0 0 12px; color:#c2410c; font-size:16px; display:flex; align-items:center; gap:8px; }
-    .low-stock-count { display:inline-block; background:#ef4444; color:#fff; border-radius:12px; padding:2px 10px; font-size:13px; font-weight:700; }
-    .low-stock-table { width:100%; border-collapse:collapse; font-size:13px; }
-    .low-stock-table th { background:#ffedd5; color:#9a3412; padding:8px 10px; text-align:left; }
-    .low-stock-table td { padding:8px 10px; border-bottom:1px solid #fed7aa; }
-    .low-stock-table tr:last-child td { border-bottom:none; }
-
-    /* ── Report table ── */
-    .report-table { width:100%; border-collapse:collapse; font-size:13px; }
-    .report-table th { background:#ede9fe; color:#5b21b6; padding:9px 12px; text-align:left; font-weight:700; }
-    .report-table td { padding:9px 12px; border-bottom:1px solid #f0eeff; }
-    .report-table tr:nth-child(even) td { background:#faf5ff; }
-    .report-table tr.totals-row td { background:#f3f0ff; font-weight:700; color:#5b21b6; border-top:2px solid #c4b5fd; }
-
-    /* ── Inventory stock status colors ── */
-    .stock-ok  { color:#16a34a; font-weight:700; }
-    .stock-low { color:#d97706; font-weight:700; }
-    .stock-out { color:#dc2626; font-weight:700; }
-
-    /* ── Order detail ── */
-    .order-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-    .order-info-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; font-size:14px; }
-    .order-info-list li { display:flex; gap:8px; }
-    .order-info-list li span:first-child { color:#6b7280; min-width:130px; flex-shrink:0; }
-    .order-info-list li span:last-child { font-weight:600; color:#111827; word-break:break-word; }
-    .status-btn-bar { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
-    .status-btn-bar .btn { flex:1; min-width:100px; justify-content:center; }
-    .status-btn-bar .btn.active-status { box-shadow:0 0 0 3px #7c3aed55; }
-
-    /* ── Sidebar separator ── */
-    .sidebar-sep { padding:6px 16px; color:#9ca3af; font-size:11px; letter-spacing:.08em; user-select:none; }
-
-    /* ── Report filter bar ── */
-    .report-filter { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; padding:14px 16px; background:#f3f0ff; border-radius:10px; }
-    .report-filter label { font-size:13px; font-weight:600; color:#374151; }
-    .report-filter input { padding:7px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:13px; }
-
-    /* ── Responsive ── */
-    @media(max-width:700px) {
-      .form-grid { grid-template-columns:1fr; }
-      .order-detail-grid { grid-template-columns:1fr; }
-    }
+    html.is-admin #view-admin-login { display: none !important; }
+    html.is-admin #view-admin-panel { display: flex !important; }
+    html:not(.is-admin) #view-admin-panel { display: none !important; }
+    html:not(.is-admin) #view-admin-login { display: flex !important; }
   </style>
+  <link rel="stylesheet" href="static/css/admin.css" />
 </head>
 <body>
 
-<!-- Toast container -->
-<div id="toast-container"></div>
+  <!-- MÀN HÌNH ĐĂNG NHẬP ADMIN -->
+  <div class="admin-login-layout" id="view-admin-login">
+    <div class="admin-login-box">
+      <h1 class="admin-login-title">Đăng Nhập Quản Trị</h1>
+      <p class="admin-login-sub">Hệ thống quản lý Melody Store</p>
 
-<!-- Admin layout wrapper -->
-<div class="admin-layout" id="app" style="display:none;">
-
-  <!-- ═══════ SIDEBAR ═══════ -->
-  <aside class="admin-sidebar">
-    <div class="sidebar-logo">🎵 MELODY STORE ADMIN</div>
-    <div class="sidebar-user" id="sidebar-user-name"></div>
-
-    <nav class="sidebar-nav">
-      <!-- Main admin pages -->
-      <a class="nav-item" href="admin.html"><span class="nav-icon">📊</span> Dashboard</a>
-      <a class="nav-item" href="admin.html"><span class="nav-icon">👥</span> Người dùng</a>
-      <a class="nav-item" href="admin.html"><span class="nav-icon">🏷️</span> Danh mục</a>
-      <a class="nav-item" href="admin.html"><span class="nav-icon">🎸</span> Sản phẩm</a>
-
-      <div class="sidebar-sep">━━ VẬN HÀNH ━━</div>
-
-      <!-- Ops sections -->
-      <a class="nav-item" id="nav-imports" onclick="showSection('imports');return false;" href="#">
-        <span class="nav-icon">📋</span> Phiếu Nhập Hàng
-      </a>
-      <a class="nav-item" id="nav-pricing" onclick="showSection('pricing');return false;" href="#">
-        <span class="nav-icon">💰</span> Quản lý Giá Bán
-      </a>
-      <a class="nav-item" id="nav-orders" onclick="showSection('orders');return false;" href="#">
-        <span class="nav-icon">📦</span> Quản lý Đơn Hàng
-      </a>
-      <a class="nav-item" id="nav-inventory" onclick="showSection('inventory');return false;" href="#">
-        <span class="nav-icon">🏪</span> Quản lý Tồn Kho
-      </a>
-
-      <div class="sidebar-sep">━━━━━━━━━━━━━━━</div>
-
-      <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span> Về trang chủ</a>
-      <a class="nav-item" id="btn-logout" href="#"><span class="nav-icon">🚪</span> Đăng xuất</a>
-    </nav>
-  </aside>
-
-  <!-- ═══════ MAIN CONTENT ═══════ -->
-  <main class="admin-main">
-    <div class="admin-content">
-
-      <!-- ════════════════════════════════════════════
-           SECTION 1: PHIẾU NHẬP HÀNG
-      ════════════════════════════════════════════ -->
-      <div class="admin-section active" id="section-imports">
-        <div class="section-header">
-          <h2>📋 Phiếu Nhập Hàng</h2>
-          <p class="section-desc">Quản lý phiếu nhập hàng và cập nhật tồn kho</p>
+      <form id="form-admin-login" onsubmit="handleAdminLoginSubmit(event)">
+        <div class="form-group" style="text-align:left;">
+          <label for="admin-username">Tên đăng nhập</label>
+          <input type="text" id="admin-username" class="form-control" required placeholder="Nhập tên đăng nhập" />
         </div>
 
-        <div class="ops-toolbar">
-          <input type="text" id="import-search" placeholder="🔍 Tìm mã phiếu, ghi chú…" oninput="filterImports()" style="min-width:260px;" />
-          <button class="btn btn-primary" onclick="openImportModal(null)">➕ Thêm Phiếu Nhập</button>
+        <div class="form-group" style="text-align:left;margin-top:12px;">
+          <label for="admin-password">Mật khẩu</label>
+          <input type="password" id="admin-password" class="form-control" required placeholder="Nhập mật khẩu" />
         </div>
 
-        <div class="ops-table-wrap">
-          <table class="ops-table" id="import-table">
-            <thead>
-              <tr>
-                <th>Mã phiếu</th>
-                <th>Ngày nhập</th>
-                <th>Trạng thái</th>
-                <th>Tổng tiền nhập</th>
-                <th>Ghi chú</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="import-tbody"></tbody>
-          </table>
+        <div id="admin-login-error" style="color:var(--danger);font-size:0.85rem;margin-top:10px;min-height:20px;font-weight:600;text-align:left;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;padding:9px;font-size:0.92rem;">
+          Đăng nhập
+        </button>
+      </form>
+
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+        <a href="index.html" style="font-size:0.82rem;color:var(--text-muted);">Quay lại trang bán hàng</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIAO DIỆN QUẢN TRỊ ADMIN -->
+  <div class="admin-wrapper" id="view-admin-panel">
+
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          MELODY <span>OPS</span>
+        </div>
+        <div class="sidebar-user">
+          <span>Tài khoản:</span>
+          <span class="sidebar-user-badge">Quản trị viên</span>
         </div>
       </div>
 
-      <!-- ════════════════════════════════════════════
-           SECTION 2: QUẢN LÝ GIÁ BÁN
-      ════════════════════════════════════════════ -->
-      <div class="admin-section" id="section-pricing">
-        <div class="section-header">
-          <h2>💰 Quản lý Giá Bán</h2>
-          <p class="section-desc">Điều chỉnh tỷ lệ lợi nhuận theo danh mục và từng sản phẩm</p>
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Hệ thống & Danh mục</div>
+        <div class="sidebar-nav-item active" id="nav-dashboard" onclick="switchAdminSection('dashboard')">
+          Bảng điều khiển
+        </div>
+        <div class="sidebar-nav-item" id="nav-users" onclick="switchAdminSection('users')">
+          Quản lý người dùng
+        </div>
+        <div class="sidebar-nav-item" id="nav-categories" onclick="switchAdminSection('categories')">
+          Quản lý loại sản phẩm
+        </div>
+        <div class="sidebar-nav-item" id="nav-products" onclick="switchAdminSection('products')">
+          Quản lý danh mục sản phẩm
         </div>
 
-        <div class="tab-bar">
-          <button class="tab-btn active" id="tab-cat-btn" onclick="switchPricingTab('cat')">🏷️ Giá theo Danh mục</button>
-          <button class="tab-btn" id="tab-prod-btn" onclick="switchPricingTab('prod')">🎸 Giá theo Sản phẩm</button>
+        <div class="nav-section-title">Nghiệp vụ vận hành</div>
+        <div class="sidebar-nav-item" id="nav-imports" onclick="switchAdminSection('imports')">
+          Quản lý nhập hàng
+        </div>
+        <div class="sidebar-nav-item" id="nav-pricing" onclick="switchAdminSection('pricing')">
+          Quản lý giá bán
+        </div>
+        <div class="sidebar-nav-item" id="nav-orders" onclick="switchAdminSection('orders')">
+          Quản lý đơn hàng
+        </div>
+        <div class="sidebar-nav-item" id="nav-inventory" onclick="switchAdminSection('inventory')">
+          Tồn kho và báo cáo
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">
+          Xem trang bán hàng
+        </a>
+        <button type="button" class="btn btn-danger btn-sm" style="width:100%;justify-content:center;" onclick="handleAdminLogout()">
+          Đăng xuất
+        </button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+
+      <header class="admin-topbar">
+        <div>
+          <h1 class="admin-topbar-title" id="admin-page-title">Bảng Điều Khiển Tổng Quan</h1>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:2px;" id="admin-page-sub">
+            Theo dõi chỉ số kinh doanh và các phân hệ quản lý
+          </p>
+        </div>
+      </header>
+
+      <!-- 1. DASHBOARD -->
+      <div id="section-dashboard" class="admin-section-content">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-title">Tổng Doanh Thu</span>
+            <div class="kpi-val" id="kpi-revenue" style="color:var(--primary);">0 ₫</div>
+            <span class="kpi-desc">Doanh thu từ các đơn hàng</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Đơn Hàng Mới</span>
+            <div class="kpi-val" id="kpi-orders" style="color:var(--warning);">0</div>
+            <span class="kpi-desc">Đơn hàng cần xử lý</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Tổng Khách Hàng</span>
+            <div class="kpi-val" id="kpi-customers">0</div>
+            <span class="kpi-desc">Tài khoản thành viên</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Sắp Hết Hàng (≤ 5)</span>
+            <div class="kpi-val" id="kpi-lowstock" style="color:var(--danger);">0</div>
+            <span class="kpi-desc">Sản phẩm cần nhập bổ sung</span>
+          </div>
         </div>
 
-        <!-- Tab A: Category margins -->
-        <div class="tab-pane active" id="tab-cat">
-          <div class="ops-table-wrap">
-            <table class="ops-table" id="cat-pricing-table">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Đơn Hàng Gần Đây</h2>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="switchAdminSection('orders')">
+              Xem tất cả đơn hàng
+            </button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="dashboard-recent-orders-table">
               <thead>
                 <tr>
-                  <th>Danh mục</th>
-                  <th>% Lợi nhuận hiện tại</th>
-                  <th>Số sản phẩm áp dụng</th>
-                  <th>Thao tác</th>
+                  <th>Mã đơn</th>
+                  <th>Ngày đặt</th>
+                  <th>Khách hàng</th>
+                  <th>Phương thức TT</th>
+                  <th class="text-right">Tổng tiền</th>
+                  <th class="text-center">Tình trạng</th>
                 </tr>
               </thead>
-              <tbody id="cat-pricing-tbody"></tbody>
+              <tbody></tbody>
             </table>
           </div>
-          <div style="margin-top:14px;text-align:right;">
-            <button class="btn btn-primary" onclick="saveAllCategoryMargins()">💾 Lưu tất cả</button>
+        </div>
+      </div>
+
+      <!-- 2. QUẢN LÝ NGƯỜI DÙNG / KHÁCH HÀNG (SỬA THÔNG TIN & ĐỔI MK) -->
+      <div id="section-users" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Danh Sách Tài Khoản Thành Viên</h2>
+            <div style="font-size:0.85rem;color:var(--text-muted);" id="users-count-label"></div>
+          </div>
+
+          <div class="filter-bar">
+            <input type="text" id="users-search-input" class="form-control" placeholder="Tìm theo tên, username, SĐT, email..." style="max-width:300px;" oninput="renderUsersTable()" />
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('users-search-input').value='';renderUsersTable();">
+              Xóa tìm kiếm
+            </button>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Tên đăng nhập</th>
+                  <th>Họ và tên</th>
+                  <th>Email / Số điện thoại</th>
+                  <th>Địa chỉ nhận hàng</th>
+                  <th class="text-center">Trạng thái</th>
+                  <th class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. QUẢN LÝ LOẠI SẢN PHẨM -->
+      <div id="section-categories" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Danh Mục Loại Sản Phẩm</h2>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAddCategoryModal()">
+              Thêm loại sản phẩm
+            </button>
+          </div>
+
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;">
+            Quản lý các nhóm nhạc cụ cùng tỷ lệ phần trăm lợi nhuận định mức của từng loại.
+          </p>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã loại</th>
+                  <th>Tên loại sản phẩm</th>
+                  <th>Mô tả</th>
+                  <th class="text-right">% LN định mức</th>
+                  <th class="text-center">Số SP</th>
+                  <th class="text-center">Trạng thái</th>
+                  <th class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="categories-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. QUẢN LÝ DANH MỤC SẢN PHẨM -->
+      <div id="section-products" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Quản Lý Danh Mục Sản Phẩm</h2>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAddProductModal()">
+              Thêm sản phẩm mới
+            </button>
+          </div>
+
+          <div class="filter-bar">
+            <input type="text" id="admin-prod-search" class="form-control" placeholder="Tìm theo mã hoặc tên sản phẩm..." style="max-width:260px;" oninput="renderAdminProductsTable()" />
+            <select id="admin-prod-cat-filter" class="form-control" style="max-width:200px;" onchange="renderAdminProductsTable()">
+              <option value="0">Tất cả loại sản phẩm</option>
+            </select>
+            <select id="admin-prod-status-filter" class="form-control" style="max-width:160px;" onchange="renderAdminProductsTable()">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">Hiển thị</option>
+              <option value="hidden">Đang ẩn</option>
+            </select>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Hình</th>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Loại</th>
+                  <th class="text-right">Giá vốn</th>
+                  <th class="text-right">% LN</th>
+                  <th class="text-right">Giá bán</th>
+                  <th class="text-center">Tồn kho</th>
+                  <th class="text-center">Trạng thái</th>
+                  <th class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="admin-products-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. QUẢN LÝ NHẬP HÀNG -->
+      <div id="section-imports" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Danh Sách Phiếu Nhập Hàng</h2>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAddImportModal()">
+              Tạo phiếu nhập mới
+            </button>
+          </div>
+
+          <div class="filter-bar">
+            <input type="text" id="import-search-input" class="form-control" placeholder="Tìm theo mã phiếu, ghi chú..." style="max-width:260px;" oninput="renderImportsTable()" />
+            <select id="import-status-filter" class="form-control" style="max-width:180px;" onchange="renderImportsTable()">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="draft">Bản nháp</option>
+              <option value="completed">Đã hoàn thành</option>
+            </select>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã phiếu</th>
+                  <th>Ngày nhập</th>
+                  <th>Mặt hàng nhập</th>
+                  <th class="text-right">Tổng tiền nhập</th>
+                  <th class="text-center">Trạng thái</th>
+                  <th>Ghi chú</th>
+                  <th class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="imports-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. QUẢN LÝ GIÁ BÁN -->
+      <div id="section-pricing" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Tỉ Lệ % Lợi Nhuận Theo Loại Sản Phẩm</h2>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã loại</th>
+                  <th>Tên loại sản phẩm</th>
+                  <th class="text-right">% Lợi nhuận hiện tại</th>
+                  <th class="text-center" style="width:200px;">Cập nhật % LN</th>
+                </tr>
+              </thead>
+              <tbody id="pricing-category-tbody"></tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Tab B: Per-product overrides -->
-        <div class="tab-pane" id="tab-prod">
-          <div class="ops-toolbar">
-            <label style="font-weight:600;font-size:14px;">Lọc danh mục:</label>
-            <select id="prod-pricing-cat-filter" onchange="loadProductPricing(this.value)">
-              <option value="">-- Tất cả --</option>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Tra Cứu Giá Vốn, % Lợi Nhuận & Giá Bán Sản Phẩm</h2>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="pricing-search-input" class="form-control" placeholder="Tra cứu theo mã hoặc tên sản phẩm..." style="max-width:300px;" oninput="renderPricingProductsTable()" />
+            <select id="pricing-cat-filter" class="form-control" style="max-width:200px;" onchange="renderPricingProductsTable()">
+              <option value="0">Tất cả loại sản phẩm</option>
             </select>
           </div>
-          <div class="ops-table-wrap">
-            <table class="ops-table" id="prod-pricing-table">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
               <thead>
                 <tr>
                   <th>Mã SP</th>
                   <th>Tên sản phẩm</th>
-                  <th>Danh mục</th>
-                  <th>Giá vốn</th>
-                  <th>% LN Danh mục</th>
-                  <th>% LN Riêng</th>
-                  <th>Giá bán tính toán</th>
-                  <th>Thao tác</th>
+                  <th>Loại</th>
+                  <th class="text-right">Giá vốn</th>
+                  <th class="text-right">% LN áp dụng</th>
+                  <th class="text-right">Giá bán tính toán</th>
+                  <th class="text-center" style="width:180px;">Sửa % LN riêng</th>
                 </tr>
               </thead>
-              <tbody id="prod-pricing-tbody"></tbody>
+              <tbody id="pricing-products-tbody"></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ════════════════════════════════════════════
-           SECTION 3: QUẢN LÝ ĐƠN HÀNG
-      ════════════════════════════════════════════ -->
-      <div class="admin-section" id="section-orders">
-        <div class="section-header">
-          <h2>📦 Quản lý Đơn Hàng</h2>
-          <p class="section-desc">Theo dõi và xử lý đơn hàng khách hàng</p>
-        </div>
+      <!-- 7. QUẢN LÝ ĐƠN HÀNG -->
+      <div id="section-orders" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Quản Lý Đơn Đặt Hàng</h2>
+          </div>
 
-        <div class="ops-toolbar" style="background:#f3f0ff;padding:14px;border-radius:10px;margin-bottom:18px;">
-          <label style="font-size:13px;font-weight:600;">Từ ngày:</label>
-          <input type="date" id="order-date-from" />
-          <label style="font-size:13px;font-weight:600;">Đến ngày:</label>
-          <input type="date" id="order-date-to" />
-          <label style="font-size:13px;font-weight:600;">Trạng thái:</label>
-          <select id="order-status-filter">
-            <option value="">Tất cả</option>
-            <option value="pending">Mới đặt</option>
-            <option value="processing">Đã xử lý</option>
-            <option value="delivered">Đã giao</option>
-            <option value="cancelled">Đã hủy</option>
-          </select>
-          <input type="text" id="order-search" placeholder="🔍 Mã đơn, tên khách…" style="min-width:200px;" />
-          <button class="btn btn-primary" onclick="filterOrders()">🔍 Tìm kiếm</button>
-          <button class="btn btn-outline" onclick="resetOrderFilter()">↺ Đặt lại</button>
-        </div>
+          <div class="filter-bar" style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Từ ngày:</label>
+              <input type="date" id="order-filter-from" class="form-control" onchange="renderAdminOrdersTable()" />
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Đến ngày:</label>
+              <input type="date" id="order-filter-to" class="form-control" onchange="renderAdminOrdersTable()" />
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Tình trạng:</label>
+              <select id="order-filter-status" class="form-control" style="width:160px;" onchange="renderAdminOrdersTable()">
+                <option value="all">Tất cả tình trạng</option>
+                <option value="pending">Mới đặt</option>
+                <option value="processing">Đã xử lý</option>
+                <option value="delivered">Đã giao</option>
+                <option value="cancelled">Đã hủy</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetOrderFilters()">
+              Đặt lại bộ lọc
+            </button>
+          </div>
 
-        <div class="ops-table-wrap">
-          <table class="ops-table" id="orders-table">
-            <thead>
-              <tr>
-                <th>Mã đơn</th>
-                <th>Khách hàng</th>
-                <th>SĐT</th>
-                <th>Ngày đặt</th>
-                <th>Tổng tiền</th>
-                <th>Thanh toán</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="orders-tbody"></tbody>
-          </table>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã đơn</th>
+                  <th>Ngày đặt</th>
+                  <th>Người nhận</th>
+                  <th>Địa chỉ nhận</th>
+                  <th class="text-right">Tổng tiền</th>
+                  <th class="text-center">Thanh toán</th>
+                  <th class="text-center">Tình trạng</th>
+                  <th class="text-center">Cập nhật</th>
+                  <th class="text-center">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ════════════════════════════════════════════
-           SECTION 4: QUẢN LÝ TỒN KHO
-      ════════════════════════════════════════════ -->
-      <div class="admin-section" id="section-inventory">
-        <div class="section-header">
-          <h2>🏪 Quản lý Tồn Kho</h2>
-          <p class="section-desc">Theo dõi tồn kho và báo cáo nhập - xuất - tồn</p>
+      <!-- 8. QUẢN LÝ TỒN KHO & BÁO CÁO -->
+      <div id="section-inventory" class="admin-section-content" style="display:none;">
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title" style="color:var(--danger);">
+              Cảnh Báo Sản Phẩm Sắp Hết Hàng (Tồn kho ≤ 5)
+            </h2>
+            <button type="button" class="btn btn-primary btn-sm" onclick="switchAdminSection('imports');openAddImportModal();">
+              Tạo phiếu nhập
+            </button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Loại</th>
+                  <th class="text-right">Giá vốn</th>
+                  <th class="text-center">Số lượng tồn</th>
+                  <th class="text-center">Mức cảnh báo</th>
+                  <th class="text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="low-stock-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
-        <!-- Low stock alert box -->
-        <div class="low-stock-box" id="low-stock-alert-box"></div>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Tra Cứu Tồn Kho Theo Phân Loại</h2>
+          </div>
+          <div class="filter-bar">
+            <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Phân loại:</label>
+            <select id="inv-cat-filter" class="form-control" style="max-width:220px;" onchange="renderInventoryByCategoryTable()">
+              <option value="0">Tất cả loại sản phẩm</option>
+            </select>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Loại</th>
+                  <th class="text-right">Giá vốn</th>
+                  <th class="text-center">Tồn kho hiện tại</th>
+                  <th class="text-right">Tổng giá trị tồn</th>
+                  <th class="text-center">Trạng thái kho</th>
+                </tr>
+              </thead>
+              <tbody id="inv-cat-tbody"></tbody>
+            </table>
+          </div>
+        </div>
 
-        <!-- Sub A: Current stock -->
-        <div class="admin-card" style="margin-bottom:24px;">
-          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-            <h3 style="margin:0;font-size:16px;">📦 Tồn kho hiện tại</h3>
-            <div style="display:flex;gap:10px;align-items:center;">
-              <label style="font-size:13px;font-weight:600;">Lọc danh mục:</label>
-              <select id="inv-cat-filter" onchange="loadInventory(this.value)">
-                <option value="">Tất cả</option>
+        <div class="admin-card">
+          <div class="admin-card-head">
+            <h2 class="admin-card-title">Báo Cáo Nhập – Xuất – Tồn Theo Khoảng Thời Gian</h2>
+          </div>
+          <div class="filter-bar" style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Từ ngày:</label>
+              <input type="date" id="rep-filter-from" class="form-control" value="2026-10-01" onchange="renderReportTable()" />
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Đến ngày:</label>
+              <input type="date" id="rep-filter-to" class="form-control" value="2026-11-30" onchange="renderReportTable()" />
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-weight:700;font-size:0.75rem;color:var(--text-muted);">Sản phẩm:</label>
+              <select id="rep-filter-prod" class="form-control" style="max-width:260px;" onchange="renderReportTable()">
+                <option value="0">Tất cả sản phẩm</option>
               </select>
             </div>
           </div>
-          <div class="ops-table-wrap" style="margin-top:14px;">
-            <table class="ops-table" id="inv-table">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
               <thead>
                 <tr>
                   <th>Mã SP</th>
                   <th>Tên sản phẩm</th>
-                  <th>Danh mục</th>
-                  <th>Tồn kho hiện tại</th>
-                  <th>Trạng thái</th>
+                  <th class="text-right">Tồn đầu kỳ</th>
+                  <th class="text-right">Nhập trong kỳ</th>
+                  <th class="text-right">Xuất trong kỳ</th>
+                  <th class="text-right">Tồn cuối kỳ</th>
+                  <th class="text-right">Tồn hiện tại</th>
                 </tr>
               </thead>
-              <tbody id="inv-tbody"></tbody>
+              <tbody id="report-table-tbody"></tbody>
             </table>
           </div>
         </div>
+      </div>
 
-        <!-- Sub C: Report -->
-        <div class="admin-card">
-          <div class="card-header">
-            <h3 style="margin:0;font-size:16px;">📊 Báo cáo Nhập - Xuất - Tồn</h3>
+    </main>
+  </div>
+
+  <!-- MODAL SỬA THÔNG TIN THÀNH VIÊN & ĐỔI MẬT KHẨU -->
+  <div class="modal-backdrop" id="user-modal-backdrop" onclick="handleUserModalBackdrop(event)">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h2 class="modal-title">Sửa Thông Tin & Đổi Mật Khẩu Thành Viên</h2>
+        <button class="modal-close-btn" onclick="closeUserModal()">×</button>
+      </div>
+      <form id="form-user-edit" onsubmit="handleUserEditSubmit(event)">
+        <input type="hidden" id="user-modal-id" value="" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label for="user-modal-username">Tên đăng nhập</label>
+            <input type="text" id="user-modal-username" class="form-control" required />
           </div>
-          <div class="report-filter">
-            <label>Từ ngày:</label>
-            <input type="date" id="report-date-from" />
-            <label>Đến ngày:</label>
-            <input type="date" id="report-date-to" />
-            <button class="btn btn-primary" onclick="loadReport()">📊 Xem báo cáo</button>
-            <button class="btn btn-outline" onclick="exportReport()">⬇️ Xuất báo cáo</button>
+          <div class="form-group">
+            <label for="user-modal-fullname">Họ và tên</label>
+            <input type="text" id="user-modal-fullname" class="form-control" required />
           </div>
-          <div id="report-result"></div>
         </div>
-      </div>
 
-    </div><!-- /admin-content -->
-  </main>
-</div><!-- /admin-layout -->
-
-<!-- ═══════════════════════════════════════════════════════
-     MODAL: ADD / EDIT IMPORT RECEIPT
-════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="import-modal">
-  <div class="modal-box modal-lg">
-    <div class="modal-header">
-      <h3 id="import-modal-title">Thêm Phiếu Nhập Hàng</h3>
-      <button class="modal-close" onclick="closeModal('import-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid" style="margin-bottom:16px;">
         <div class="form-group">
-          <label>Mã phiếu</label>
-          <input type="text" id="im-code" placeholder="PN-2026-XXX" />
+          <label for="user-modal-password">Mật khẩu mới (Để trống nếu không đổi)</label>
+          <input type="text" id="user-modal-password" class="form-control" placeholder="Nhập mật khẩu mới tùy ý" />
         </div>
-        <div class="form-group">
-          <label>Ngày nhập</label>
-          <input type="date" id="im-date" />
-        </div>
-        <div class="form-group full">
-          <label>Ghi chú</label>
-          <textarea id="im-notes" rows="2" placeholder="Ghi chú về lô hàng…"></textarea>
-        </div>
-      </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <strong style="font-size:14px;color:#5b21b6;">Danh sách sản phẩm nhập</strong>
-        <button class="btn btn-outline btn-sm" onclick="addImportItemRow()">➕ Thêm dòng sản phẩm</button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="import-items-table">
-          <thead>
-            <tr>
-              <th style="min-width:220px;">Sản phẩm</th>
-              <th style="min-width:130px;">Giá nhập (₫)</th>
-              <th style="min-width:90px;">Số lượng</th>
-              <th style="min-width:130px;">Thành tiền</th>
-              <th style="width:36px;"></th>
-            </tr>
-          </thead>
-          <tbody id="im-items-tbody"></tbody>
-        </table>
-      </div>
-      <div class="import-total-bar">
-        <span>Tổng cộng:</span>
-        <span id="im-total-display" style="color:#16a34a;font-size:17px;">0 ₫</span>
-      </div>
-    </div>
-    <div class="modal-footer" id="import-modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
-      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
-      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label for="user-modal-email">Email</label>
+            <input type="email" id="user-modal-email" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label for="user-modal-phone">Số điện thoại</label>
+            <input type="tel" id="user-modal-phone" class="form-control" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="user-modal-address">Địa chỉ nhận hàng</label>
+          <input type="text" id="user-modal-address" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label for="user-modal-status">Trạng thái tài khoản</label>
+          <select id="user-modal-status" class="form-control">
+            <option value="active">Đang hoạt động</option>
+            <option value="locked">Bị khóa (Chặn đăng nhập)</option>
+          </select>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
     </div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     MODAL: ORDER DETAIL
-════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="order-modal">
-  <div class="modal-box modal-lg">
-    <div class="modal-header">
-      <h3 id="order-modal-title">Chi tiết Đơn Hàng</h3>
-      <button class="modal-close" onclick="closeModal('order-modal')">×</button>
-    </div>
-    <div class="modal-body" id="order-modal-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('order-modal')">Đóng</button>
+  <!-- MODAL THÊM / SỬA LOẠI SẢN PHẨM -->
+  <div class="modal-backdrop" id="category-modal-backdrop" onclick="handleCategoryModalBackdrop(event)">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h2 class="modal-title" id="cat-modal-title">Thêm Loại Sản Phẩm Mới</h2>
+        <button class="modal-close-btn" onclick="closeCategoryModal()">×</button>
+      </div>
+
+      <form id="form-category-modal" onsubmit="handleCategoryFormSubmit(event)">
+        <input type="hidden" id="cat-modal-id" value="" />
+
+        <div class="form-group">
+          <label for="cat-modal-code">Mã loại sản phẩm *</label>
+          <input type="text" id="cat-modal-code" class="form-control" required placeholder="GUITAR, PIANO, DRUMS..." />
+        </div>
+
+        <div class="form-group">
+          <label for="cat-modal-name">Tên loại sản phẩm *</label>
+          <input type="text" id="cat-modal-name" class="form-control" required placeholder="Đàn Guitar, Đàn Piano..." />
+        </div>
+
+        <div class="form-group">
+          <label for="cat-modal-margin">% Lợi nhuận định mức (%) *</label>
+          <input type="number" id="cat-modal-margin" class="form-control" required min="0" max="200" step="0.5" value="20" />
+        </div>
+
+        <div class="form-group">
+          <label for="cat-modal-desc">Mô tả loại sản phẩm</label>
+          <textarea id="cat-modal-desc" class="form-control" rows="3" placeholder="Mô tả tóm tắt..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="cat-modal-status">Trạng thái hiển thị</label>
+          <select id="cat-modal-status" class="form-control">
+            <option value="active">Hiển thị</option>
+            <option value="hidden">Ẩn trên website</option>
+          </select>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu loại sản phẩm</button>
+        </div>
+      </form>
     </div>
   </div>
-</div>
 
-<script>
-'use strict';
-
-/* ═══════════════════════════════════════════════════
-   MOCK DATA
-═══════════════════════════════════════════════════ */
-let MOCK_CATEGORIES = [
-  { id:1, code:'GUITAR', name:'Đàn Guitar', profit_margin:25 },
-  { id:2, code:'PIANO',  name:'Đàn Piano & Keyboard', profit_margin:20 },
-  { id:3, code:'DRUMS',  name:'Trống & Bộ Gõ', profit_margin:30 },
-  { id:4, code:'VIOLIN', name:'Đàn Violin & Nhạc Cụ Dây', profit_margin:22 },
-  { id:5, code:'WIND',   name:'Nhạc Cụ Hơi (Kèn & Sáo)', profit_margin:25 },
-  { id:6, code:'ACC',    name:'Phụ Kiện Âm Nhạc', profit_margin:35 }
-];
-
-let MOCK_PRODUCTS = [
-  { id:1,  category_id:1, code:'GTR-YAM-F310',   name:'Đàn Guitar Acoustic Yamaha F310',         cost_price:2500000,  profit_margin:null, status:'active', stock:15 },
-  { id:2,  category_id:1, code:'GTR-FEN-STRAT',   name:'Đàn Guitar Điện Fender Stratocaster',      cost_price:16000000, profit_margin:22,   status:'active', stock:6  },
-  { id:3,  category_id:1, code:'GTR-TAY-214CE',   name:'Đàn Guitar Acoustic Taylor 214ce',         cost_price:26000000, profit_margin:18,   status:'active', stock:4  },
-  { id:4,  category_id:2, code:'PNO-ROL-FP30X',   name:'Đàn Piano Điện Roland FP-30X',             cost_price:15500000, profit_margin:null, status:'active', stock:8  },
-  { id:5,  category_id:2, code:'PNO-YAM-P45',     name:'Đàn Piano Điện Yamaha P-45B',              cost_price:9800000,  profit_margin:null, status:'active', stock:12 },
-  { id:6,  category_id:3, code:'DRM-PEA-ROAD',    name:'Bộ Trống Cơ Pearl Roadshow',               cost_price:13200000, profit_margin:null, status:'active', stock:5  },
-  { id:7,  category_id:3, code:'DRM-ROL-TD1DMK',  name:'Bộ Trống Điện Tử Roland TD-1DMK',          cost_price:16500000, profit_margin:25,   status:'active', stock:7  },
-  { id:8,  category_id:4, code:'VLN-YAM-V5SC',    name:'Đàn Violin Yamaha V5SC 4/4',               cost_price:8500000,  profit_margin:null, status:'active', stock:8  },
-  { id:9,  category_id:5, code:'WND-YAM-YFL222',  name:'Kèn Sáo Flute Yamaha YFL-222',             cost_price:11200000, profit_margin:null, status:'active', stock:7  },
-  { id:10, category_id:5, code:'WND-YAM-YAS280',  name:'Kèn Saxophone Alto Yamaha YAS-280',        cost_price:24500000, profit_margin:20,   status:'active', stock:4  },
-  { id:11, category_id:6, code:'ACC-KOR-TM60',    name:'Máy Đập Nhịp Korg TM-60',                  cost_price:680000,   profit_margin:null, status:'active', stock:30 },
-  { id:12, category_id:6, code:'ACC-DAD-EJ16',    name:"Bộ Dây Đàn D'Addario EJ16",               cost_price:185000,   profit_margin:50,   status:'active', stock:45 }
-];
-
-let MOCK_IMPORT_RECEIPTS = [
-  { id:1, receipt_code:'PN-2026-001', import_date:'2026-10-14', status:'completed', total_cost:78500000,
-    notes:'Nhập lô Guitar Yamaha và Roland Piano',
-    items:[{product_id:1,import_price:2500000,quantity:10,subtotal:25000000},{product_id:4,import_price:15500000,quantity:3,subtotal:46500000}] },
-  { id:2, receipt_code:'PN-2026-002', import_date:'2026-10-24', status:'completed', total_cost:52100000,
-    notes:'Nhập bổ sung trống Pearl và kèn Saxophone',
-    items:[{product_id:6,import_price:13200000,quantity:2,subtotal:26400000},{product_id:10,import_price:24500000,quantity:1,subtotal:24500000}] },
-  { id:3, receipt_code:'PN-2026-003', import_date:'2026-10-29', status:'draft',     total_cost:29200000,
-    notes:'Phiếu nháp: Nhập Violin và Guitar Classic',
-    items:[{product_id:8,import_price:8200000,quantity:2,subtotal:16400000},{product_id:3,import_price:3200000,quantity:4,subtotal:12800000}] }
-];
-
-let MOCK_ORDERS = [
-  { id:1, order_code:'DH-2026-001', user_id:2, recipient_name:'Nguyễn Văn An',  recipient_phone:'0912345678',
-    recipient_address:'123 Lê Lợi, Q.1, TP.HCM', payment_method:'cod', payment_status:'paid',
-    order_status:'delivered', total_amount:3125000, notes:'Giao giờ hành chính', created_at:'2026-10-22 09:30',
-    items:[{product_id:1, product_name:'Đàn Guitar Acoustic Yamaha F310', unit_price:3125000, quantity:1, subtotal:3125000}] },
-  { id:2, order_code:'DH-2026-002', user_id:3, recipient_name:'Trần Thị Mai',   recipient_phone:'0987654321',
-    recipient_address:'45 Hai Bà Trưng, Hoàn Kiếm, HN', payment_method:'bank_transfer', payment_status:'paid',
-    order_status:'processing', total_amount:18600000, notes:'Đóng gói cẩn thận', created_at:'2026-10-27 14:15',
-    items:[{product_id:4, product_name:'Đàn Piano Điện Roland FP-30X', unit_price:18600000, quantity:1, subtotal:18600000}] },
-  { id:3, order_code:'DH-2026-003', user_id:2, recipient_name:'Nguyễn Văn An',  recipient_phone:'0912345678',
-    recipient_address:'Chung cư Sunrise City, Q.7, TP.HCM', payment_method:'cod', payment_status:'unpaid',
-    order_status:'pending', total_amount:1067000, notes:'Giao cuối tuần', created_at:'2026-10-29 08:00',
-    items:[{product_id:11, product_name:'Máy Đập Nhịp Korg TM-60', unit_price:1067000, quantity:1, subtotal:1067000}] },
-  { id:4, order_code:'DH-2026-004', user_id:3, recipient_name:'Trần Thị Mai',   recipient_phone:'0987654321',
-    recipient_address:'45 Hai Bà Trưng, HN', payment_method:'online', payment_status:'unpaid',
-    order_status:'cancelled', total_amount:5125000, notes:'Khách đổi ý', created_at:'2026-10-19 11:00',
-    items:[{product_id:5, product_name:'Đàn Piano Điện Yamaha P-45B', unit_price:5125000, quantity:1, subtotal:5125000}] }
-];
-
-let nextReceiptId = 4;
-let currentImportId = null; // id being edited, null = new
-
-/* ═══════════════════════════════════════════════════
-   UTILITIES
-═══════════════════════════════════════════════════ */
-function formatVND(n) {
-  if (n === null || n === undefined) return '—';
-  return new Intl.NumberFormat('vi-VN', { style:'currency', currency:'VND' }).format(n);
-}
-
-function formatDate(str) {
-  if (!str) return '—';
-  const d = new Date(str);
-  if (isNaN(d)) return str;
-  return d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-function formatDateOnly(str) {
-  if (!str) return '—';
-  const d = new Date(str);
-  if (isNaN(d)) return str;
-  return d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-function todayStr() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function getCategoryById(id) {
-  return MOCK_CATEGORIES.find(c => c.id === id) || null;
-}
-
-function getProductById(id) {
-  return MOCK_PRODUCTS.find(p => p.id === id) || null;
-}
-
-function calcPrice(product) {
-  const cat = getCategoryById(product.category_id);
-  const margin = (product.profit_margin !== null && product.profit_margin !== undefined)
-    ? product.profit_margin
-    : (cat ? cat.profit_margin : 0);
-  return Math.round(product.cost_price * (1 + margin / 100) / 1000) * 1000;
-}
-
-function showToast(msg, type = 'success') {
-  const container = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.textContent = msg;
-  container.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3000);
-}
-
-function genReceiptCode() {
-  const yr = new Date().getFullYear();
-  const num = String(nextReceiptId).padStart(3, '0');
-  return `PN-${yr}-${num}`;
-}
-
-/* ═══════════════════════════════════════════════════
-   AUTH GUARD
-═══════════════════════════════════════════════════ */
-(function checkAuth() {
-  const adminUser = localStorage.getItem('adminUser');
-  if (!adminUser) {
-    window.location.href = 'admin.html';
-    return;
-  }
-  let user;
-  try { user = JSON.parse(adminUser); } catch(e) { user = { full_name: adminUser }; }
-  document.getElementById('sidebar-user-name').textContent = '👤 ' + (user.full_name || user.username || adminUser);
-  document.getElementById('app').style.display = 'flex';
-})();
-
-document.getElementById('btn-logout').addEventListener('click', function(e) {
-  e.preventDefault();
-  if (confirm('Bạn có chắc muốn đăng xuất?')) {
-    localStorage.removeItem('adminUser');
-    window.location.href = 'admin.html';
-  }
-});
-
-/* ═══════════════════════════════════════════════════
-   SECTION NAVIGATION
-═══════════════════════════════════════════════════ */
-function showSection(id) {
-  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-  const section = document.getElementById('section-' + id);
-  if (section) section.classList.add('active');
-  const navItem = document.getElementById('nav-' + id);
-  if (navItem) navItem.classList.add('active');
-
-  if (id === 'imports')   loadImports();
-  if (id === 'pricing')   { loadCategoryPricing(); switchPricingTab('cat'); }
-  if (id === 'orders')    loadOrders();
-  if (id === 'inventory') { populateInvCatFilter(); loadInventory(''); loadLowStock(); }
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-/* ═══════════════════════════════════════════════════
-   SECTION 1: PHIẾU NHẬP HÀNG
-═══════════════════════════════════════════════════ */
-function loadImports() {
-  renderImports(MOCK_IMPORT_RECEIPTS);
-}
-
-function filterImports() {
-  const q = document.getElementById('import-search').value.trim().toLowerCase();
-  if (!q) { renderImports(MOCK_IMPORT_RECEIPTS); return; }
-  const filtered = MOCK_IMPORT_RECEIPTS.filter(r =>
-    r.receipt_code.toLowerCase().includes(q) ||
-    (r.notes || '').toLowerCase().includes(q)
-  );
-  renderImports(filtered);
-}
-
-function renderImports(list) {
-  const tbody = document.getElementById('import-tbody');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:24px;">Không có phiếu nhập nào</td></tr>';
-    return;
-  }
-  tbody.innerHTML = list.map(r => {
-    const isDraft = r.status === 'draft';
-    const badge = isDraft
-      ? '<span class="badge badge-yellow">Bản nháp</span>'
-      : '<span class="badge badge-green">Hoàn thành</span>';
-    const btns = isDraft
-      ? `<button class="btn btn-info btn-sm" onclick="openImportModal(${r.id})" style="margin-right:6px;">✏️ Xem/Sửa</button>
-         <button class="btn btn-success btn-sm" onclick="completeImport(${r.id})">✅ Hoàn thành</button>`
-      : `<button class="btn btn-outline btn-sm" onclick="openImportModalReadOnly(${r.id})">👁 Xem chi tiết</button>`;
-    return `<tr>
-      <td><strong>${r.receipt_code}</strong></td>
-      <td>${formatDateOnly(r.import_date)}</td>
-      <td>${badge}</td>
-      <td><strong style="color:#16a34a;">${formatVND(r.total_cost)}</strong></td>
-      <td style="max-width:220px;white-space:normal;font-size:13px;color:#6b7280;">${r.notes || '—'}</td>
-      <td style="white-space:nowrap;">${btns}</td>
-    </tr>`;
-  }).join('');
-}
-
-function openImportModal(id) {
-  currentImportId = id;
-  const title = document.getElementById('import-modal-title');
-  const footer = document.getElementById('import-modal-footer');
-
-  if (id === null) {
-    // New receipt
-    title.textContent = 'Thêm Phiếu Nhập Hàng';
-    document.getElementById('im-code').value = genReceiptCode();
-    document.getElementById('im-date').value = todayStr();
-    document.getElementById('im-notes').value = '';
-    document.getElementById('im-items-tbody').innerHTML = '';
-    addImportItemRow();
-    footer.innerHTML = `
-      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
-      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
-      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>`;
-  } else {
-    const r = MOCK_IMPORT_RECEIPTS.find(x => x.id === id);
-    if (!r) return;
-    title.textContent = 'Sửa Phiếu: ' + r.receipt_code;
-    document.getElementById('im-code').value = r.receipt_code;
-    document.getElementById('im-date').value = r.import_date;
-    document.getElementById('im-notes').value = r.notes || '';
-    document.getElementById('im-items-tbody').innerHTML = '';
-    r.items.forEach(item => addImportItemRow(item));
-    footer.innerHTML = `
-      <button class="btn btn-outline" onclick="closeModal('import-modal')">Hủy</button>
-      <button class="btn btn-warning" onclick="saveImportDraft()">💾 Lưu Bản Nháp</button>
-      <button class="btn btn-success" onclick="completeImportFromModal()">✅ Hoàn thành & Cập nhật kho</button>`;
-  }
-  calcImportTotal();
-  document.getElementById('import-modal').classList.add('open');
-}
-
-function openImportModalReadOnly(id) {
-  currentImportId = id;
-  const r = MOCK_IMPORT_RECEIPTS.find(x => x.id === id);
-  if (!r) return;
-
-  document.getElementById('import-modal-title').textContent = 'Chi tiết Phiếu: ' + r.receipt_code;
-  document.getElementById('im-code').value = r.receipt_code;
-  document.getElementById('im-code').readOnly = true;
-  document.getElementById('im-date').value = r.import_date;
-  document.getElementById('im-date').readOnly = true;
-  document.getElementById('im-notes').value = r.notes || '';
-  document.getElementById('im-notes').readOnly = true;
-
-  const tbody = document.getElementById('im-items-tbody');
-  tbody.innerHTML = '';
-  r.items.forEach(item => {
-    const prod = getProductById(item.product_id);
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${prod ? prod.name : '—'}</td>
-      <td>${formatVND(item.import_price)}</td>
-      <td>${item.quantity}</td>
-      <td><strong>${formatVND(item.subtotal)}</strong></td>
-      <td></td>`;
-    tbody.appendChild(row);
-  });
-  calcImportTotal();
-
-  document.getElementById('import-modal-footer').innerHTML = `
-    <button class="btn btn-outline" onclick="closeModal('import-modal');
-      document.getElementById('im-code').readOnly=false;
-      document.getElementById('im-date').readOnly=false;
-      document.getElementById('im-notes').readOnly=false;">Đóng</button>`;
-
-  document.getElementById('import-modal').classList.add('open');
-}
-
-function addImportItemRow(existing) {
-  const tbody = document.getElementById('im-items-tbody');
-  const tr = document.createElement('tr');
-
-  const productOptions = MOCK_PRODUCTS.map(p =>
-    `<option value="${p.id}" ${existing && existing.product_id === p.id ? 'selected' : ''}>${p.name}</option>`
-  ).join('');
-
-  tr.innerHTML = `
-    <td><select onchange="calcImportTotal()" style="min-width:200px;">${productOptions}</select></td>
-    <td><input type="number" value="${existing ? existing.import_price : ''}" min="0" placeholder="Giá nhập" oninput="calcImportTotal()" /></td>
-    <td><input type="number" value="${existing ? existing.quantity : 1}" min="1" placeholder="SL" oninput="calcImportTotal()" /></td>
-    <td><input type="number" readonly placeholder="0" style="background:#f9fafb;color:#16a34a;font-weight:700;" /></td>
-    <td><button class="btn btn-danger btn-xs" onclick="removeImportRow(this)" title="Xóa dòng">×</button></td>`;
-
-  tbody.appendChild(tr);
-  calcImportTotal();
-}
-
-function removeImportRow(btn) {
-  btn.closest('tr').remove();
-  calcImportTotal();
-}
-
-function calcImportTotal() {
-  let total = 0;
-  document.querySelectorAll('#im-items-tbody tr').forEach(row => {
-    const inputs = row.querySelectorAll('input[type="number"]');
-    if (inputs.length < 3) return;
-    const price = parseFloat(inputs[0].value) || 0;
-    const qty   = parseFloat(inputs[1].value) || 0;
-    const sub   = price * qty;
-    inputs[2].value = sub ? sub : '';
-    total += sub;
-  });
-  document.getElementById('im-total-display').textContent = formatVND(total);
-}
-
-function collectImportFormData() {
-  const code  = document.getElementById('im-code').value.trim();
-  const date  = document.getElementById('im-date').value;
-  const notes = document.getElementById('im-notes').value.trim();
-  const items = [];
-  let valid = true;
-
-  document.querySelectorAll('#im-items-tbody tr').forEach(row => {
-    const sel    = row.querySelector('select');
-    const inputs = row.querySelectorAll('input[type="number"]');
-    if (!sel || inputs.length < 2) return;
-    const product_id   = parseInt(sel.value);
-    const import_price = parseFloat(inputs[0].value) || 0;
-    const quantity     = parseInt(inputs[1].value) || 0;
-    if (!product_id || import_price <= 0 || quantity <= 0) { valid = false; return; }
-    items.push({ product_id, import_price, quantity, subtotal: import_price * quantity });
-  });
-
-  if (!code)           { showToast('Vui lòng nhập mã phiếu', 'error'); return null; }
-  if (!date)           { showToast('Vui lòng chọn ngày nhập', 'error'); return null; }
-  if (!items.length)   { showToast('Phiếu nhập phải có ít nhất một sản phẩm', 'error'); return null; }
-  if (!valid)          { showToast('Kiểm tra lại giá nhập và số lượng (phải > 0)', 'error'); return null; }
-
-  const total_cost = items.reduce((s, i) => s + i.subtotal, 0);
-  return { receipt_code:code, import_date:date, notes, items, total_cost };
-}
-
-function saveImportDraft() {
-  const data = collectImportFormData();
-  if (!data) return;
-
-  if (currentImportId !== null) {
-    const idx = MOCK_IMPORT_RECEIPTS.findIndex(r => r.id === currentImportId);
-    if (idx !== -1) {
-      MOCK_IMPORT_RECEIPTS[idx] = { ...MOCK_IMPORT_RECEIPTS[idx], ...data, status:'draft' };
-      showToast('Đã lưu bản nháp phiếu ' + data.receipt_code, 'info');
-    }
-  } else {
-    const newRec = { id: nextReceiptId++, ...data, status:'draft' };
-    MOCK_IMPORT_RECEIPTS.push(newRec);
-    showToast('Đã tạo bản nháp phiếu ' + data.receipt_code, 'info');
-  }
-  closeModal('import-modal');
-  loadImports();
-}
-
-function completeImportFromModal() {
-  const data = collectImportFormData();
-  if (!data) return;
-  if (!confirm(`Xác nhận hoàn thành phiếu "${data.receipt_code}" và cập nhật tồn kho?`)) return;
-
-  let rec;
-  if (currentImportId !== null) {
-    const idx = MOCK_IMPORT_RECEIPTS.findIndex(r => r.id === currentImportId);
-    if (idx !== -1) {
-      MOCK_IMPORT_RECEIPTS[idx] = { ...MOCK_IMPORT_RECEIPTS[idx], ...data, status:'completed' };
-      rec = MOCK_IMPORT_RECEIPTS[idx];
-    }
-  } else {
-    rec = { id: nextReceiptId++, ...data, status:'completed' };
-    MOCK_IMPORT_RECEIPTS.push(rec);
-  }
-
-  if (rec) applyImportToStock(rec);
-  closeModal('import-modal');
-  loadImports();
-  showToast('Phiếu ' + data.receipt_code + ' đã hoàn thành – tồn kho đã cập nhật!', 'success');
-}
-
-function completeImport(id) {
-  const rec = MOCK_IMPORT_RECEIPTS.find(r => r.id === id);
-  if (!rec) return;
-  if (!confirm(`Xác nhận hoàn thành phiếu "${rec.receipt_code}" và cập nhật tồn kho?`)) return;
-  rec.status = 'completed';
-  applyImportToStock(rec);
-  loadImports();
-  showToast('Phiếu ' + rec.receipt_code + ' đã hoàn thành – tồn kho đã cập nhật!', 'success');
-}
-
-function applyImportToStock(rec) {
-  rec.items.forEach(item => {
-    const prod = getProductById(item.product_id);
-    if (prod) {
-      prod.stock += item.quantity;
-      prod.cost_price = item.import_price;
-    }
-  });
-}
-
-/* ═══════════════════════════════════════════════════
-   SECTION 2: QUẢN LÝ GIÁ BÁN
-═══════════════════════════════════════════════════ */
-function switchPricingTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab + '-btn').classList.add('active');
-  document.getElementById('tab-' + tab).classList.add('active');
-  if (tab === 'cat')  loadCategoryPricing();
-  if (tab === 'prod') {
-    populateProdPricingFilter();
-    loadProductPricing('');
-  }
-}
-
-function loadCategoryPricing() {
-  const tbody = document.getElementById('cat-pricing-tbody');
-  tbody.innerHTML = MOCK_CATEGORIES.map(cat => {
-    const productCount = MOCK_PRODUCTS.filter(p => p.category_id === cat.id && p.profit_margin === null).length;
-    return `<tr id="cat-row-${cat.id}">
-      <td><strong>${cat.name}</strong><br/><span style="font-size:12px;color:#9ca3af;">${cat.code}</span></td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" class="margin-input" id="cat-margin-${cat.id}" value="${cat.profit_margin}" min="0" max="500" step="0.5" />
-          <span style="color:#6b7280;font-size:13px;">%</span>
-        </div>
-      </td>
-      <td><span class="badge badge-blue">${productCount} sản phẩm</span></td>
-      <td>
-        <button class="btn btn-success btn-sm" onclick="saveCategoryMargin(${cat.id})">💾 Lưu</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function saveCategoryMargin(catId) {
-  const input = document.getElementById('cat-margin-' + catId);
-  const val = parseFloat(input.value);
-  if (isNaN(val) || val < 0) { showToast('Tỷ lệ lợi nhuận không hợp lệ', 'error'); return; }
-  const cat = getCategoryById(catId);
-  if (cat) { cat.profit_margin = val; showToast(`Đã lưu % LN cho "${cat.name}": ${val}%`, 'success'); }
-  if (document.getElementById('tab-prod').classList.contains('active')) loadProductPricing(document.getElementById('prod-pricing-cat-filter').value);
-}
-
-function saveAllCategoryMargins() {
-  let ok = true;
-  MOCK_CATEGORIES.forEach(cat => {
-    const input = document.getElementById('cat-margin-' + cat.id);
-    if (!input) return;
-    const val = parseFloat(input.value);
-    if (isNaN(val) || val < 0) { ok = false; return; }
-    cat.profit_margin = val;
-  });
-  if (!ok) { showToast('Có giá trị không hợp lệ, vui lòng kiểm tra lại', 'error'); return; }
-  showToast('Đã lưu tỷ lệ lợi nhuận cho tất cả danh mục!', 'success');
-}
-
-function populateProdPricingFilter() {
-  const sel = document.getElementById('prod-pricing-cat-filter');
-  sel.innerHTML = '<option value="">-- Tất cả --</option>' +
-    MOCK_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-function loadProductPricing(catId) {
-  const catIdNum = catId ? parseInt(catId) : null;
-  const list = catIdNum ? MOCK_PRODUCTS.filter(p => p.category_id === catIdNum) : MOCK_PRODUCTS;
-  const tbody = document.getElementById('prod-pricing-tbody');
-
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;">Không có sản phẩm</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = list.map(p => {
-    const cat = getCategoryById(p.category_id);
-    const catMargin = cat ? cat.profit_margin : 0;
-    const ownMargin = (p.profit_margin !== null && p.profit_margin !== undefined) ? p.profit_margin : '';
-    const effectiveMargin = (ownMargin !== '') ? ownMargin : catMargin;
-    const price = Math.round(p.cost_price * (1 + effectiveMargin / 100) / 1000) * 1000;
-
-    return `<tr id="prod-row-${p.id}">
-      <td><code style="font-size:12px;">${p.code}</code></td>
-      <td style="max-width:200px;white-space:normal;font-size:13px;">${p.name}</td>
-      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
-      <td style="color:#0369a1;font-weight:600;">${formatVND(p.cost_price)}</td>
-      <td style="text-align:center;">${catMargin}%</td>
-      <td>
-        <input type="number" class="margin-input" id="prod-margin-${p.id}"
-          value="${ownMargin}" min="0" max="500" step="0.5"
-          placeholder="Dùng của DM"
-          oninput="updateCalcPrice(${p.id}, ${p.cost_price}, ${catMargin})" />
-        <span style="color:#6b7280;font-size:12px;">%</span>
-      </td>
-      <td class="calc-price" id="calc-price-${p.id}">${formatVND(price)}</td>
-      <td style="white-space:nowrap;">
-        <button class="btn btn-success btn-xs" onclick="saveProductMargin(${p.id}, ${p.cost_price}, ${catMargin})" style="margin-right:4px;">💾 Lưu</button>
-        <button class="btn btn-outline btn-xs" onclick="clearProductMargin(${p.id}, ${p.cost_price}, ${catMargin})">✖ Xóa % riêng</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function updateCalcPrice(productId, costPrice, catMargin) {
-  const input = document.getElementById('prod-margin-' + productId);
-  const val = input.value !== '' ? parseFloat(input.value) : catMargin;
-  const price = Math.round(costPrice * (1 + val / 100) / 1000) * 1000;
-  const el = document.getElementById('calc-price-' + productId);
-  if (el) el.textContent = formatVND(price);
-}
-
-function saveProductMargin(productId, costPrice, catMargin) {
-  const input = document.getElementById('prod-margin-' + productId);
-  const val = input.value !== '' ? parseFloat(input.value) : null;
-  if (val !== null && (isNaN(val) || val < 0)) { showToast('Tỷ lệ LN không hợp lệ', 'error'); return; }
-  const prod = getProductById(productId);
-  if (prod) {
-    prod.profit_margin = val;
-    showToast(`Đã cập nhật % LN sản phẩm "${prod.name}"`, 'success');
-    updateCalcPrice(productId, costPrice, catMargin);
-  }
-}
-
-function clearProductMargin(productId, costPrice, catMargin) {
-  const prod = getProductById(productId);
-  if (prod) {
-    prod.profit_margin = null;
-    const input = document.getElementById('prod-margin-' + productId);
-    if (input) input.value = '';
-    updateCalcPrice(productId, costPrice, catMargin);
-    showToast(`Đã xóa % LN riêng – sản phẩm dùng % của danh mục`, 'info');
-  }
-}
-
-/* ═══════════════════════════════════════════════════
-   SECTION 3: QUẢN LÝ ĐƠN HÀNG
-═══════════════════════════════════════════════════ */
-function getAllOrders() {
-  let stored = [];
-  try { stored = JSON.parse(localStorage.getItem('orders')) || []; } catch {}
-  const existingCodes = new Set(MOCK_ORDERS.map(o => o.order_code));
-  const newOrders = stored.filter(o => !existingCodes.has(o.order_code));
-  return [...newOrders, ...MOCK_ORDERS];
-}
-
-function loadOrders() {
-  renderOrders(getAllOrders());
-}
-
-function filterOrders() {
-  const dateFrom = document.getElementById('order-date-from').value;
-  const dateTo   = document.getElementById('order-date-to').value;
-  const status   = document.getElementById('order-status-filter').value;
-  const q        = document.getElementById('order-search').value.trim().toLowerCase();
-
-  let list = getAllOrders();
-  if (dateFrom) list = list.filter(o => o.created_at.split(' ')[0] >= dateFrom);
-  if (dateTo)   list = list.filter(o => o.created_at.split(' ')[0] <= dateTo);
-  if (status)   list = list.filter(o => o.order_status === status);
-  if (q)        list = list.filter(o =>
-    o.order_code.toLowerCase().includes(q) ||
-    o.recipient_name.toLowerCase().includes(q)
-  );
-  renderOrders(list);
-}
-
-function resetOrderFilter() {
-  document.getElementById('order-date-from').value = '';
-  document.getElementById('order-date-to').value = '';
-  document.getElementById('order-status-filter').value = '';
-  document.getElementById('order-search').value = '';
-  loadOrders();
-}
-
-function paymentMethodLabel(m) {
-  const map = { cod:'Tiền mặt COD', bank_transfer:'Chuyển khoản', online:'Trực tuyến' };
-  return map[m] || m;
-}
-
-function orderStatusBadge(s) {
-  const map = {
-    pending:    '<span class="badge badge-yellow">Mới đặt</span>',
-    processing: '<span class="badge badge-blue">Đã xử lý</span>',
-    delivered:  '<span class="badge badge-green">Đã giao</span>',
-    cancelled:  '<span class="badge badge-red">Đã hủy</span>'
-  };
-  return map[s] || `<span class="badge">${s}</span>`;
-}
-
-function paymentStatusBadge(s) {
-  return s === 'paid'
-    ? '<span class="badge badge-green">✔ Đã TT</span>'
-    : '<span class="badge badge-orange">⏳ Chưa TT</span>';
-}
-
-function renderOrders(list) {
-  const tbody = document.getElementById('orders-tbody');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:24px;">Không tìm thấy đơn hàng nào</td></tr>';
-    return;
-  }
-  tbody.innerHTML = list.map(o => `<tr>
-    <td><strong>${o.order_code}</strong></td>
-    <td>${o.recipient_name}</td>
-    <td>${o.recipient_phone}</td>
-    <td style="font-size:13px;">${formatDate(o.created_at)}</td>
-    <td><strong style="color:#16a34a;">${formatVND(o.total_amount)}</strong></td>
-    <td style="font-size:12px;">
-      ${paymentMethodLabel(o.payment_method)}<br/>
-      ${paymentStatusBadge(o.payment_status)}
-    </td>
-    <td>${orderStatusBadge(o.order_status)}</td>
-    <td><button class="btn btn-info btn-sm" onclick="openOrderDetail(${o.id})">🔍 Chi tiết & Cập nhật</button></td>
-  </tr>`).join('');
-}
-
-function openOrderDetail(id) {
-  const o = MOCK_ORDERS.find(x => x.id === id);
-  if (!o) return;
-  document.getElementById('order-modal-title').textContent = 'Đơn hàng: ' + o.order_code;
-
-  const itemsRows = o.items.map(item => `<tr>
-    <td style="font-size:13px;">${item.product_name}</td>
-    <td style="text-align:center;">${item.quantity}</td>
-    <td style="text-align:right;">${formatVND(item.unit_price)}</td>
-    <td style="text-align:right;font-weight:700;color:#16a34a;">${formatVND(item.subtotal)}</td>
-  </tr>`).join('');
-
-  const statusButtons = ['pending','processing','delivered','cancelled'].map(s => {
-    const labels = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao', cancelled:'Hủy đơn' };
-    const classes = { pending:'btn-warning', processing:'btn-info', delivered:'btn-success', cancelled:'btn-danger' };
-    const active = o.order_status === s ? ' active-status' : '';
-    return `<button class="btn ${classes[s]}${active} btn-sm" onclick="updateOrderStatus(${id},'${s}')">${labels[s]}</button>`;
-  }).join('');
-
-  document.getElementById('order-modal-body').innerHTML = `
-    <div class="order-detail-grid">
-      <div>
-        <h4 style="color:#5b21b6;margin:0 0 12px;font-size:15px;">📋 Thông tin đơn hàng</h4>
-        <ul class="order-info-list">
-          <li><span>Mã đơn:</span><span>${o.order_code}</span></li>
-          <li><span>Ngày đặt:</span><span>${formatDate(o.created_at)}</span></li>
-          <li><span>Khách hàng:</span><span>${o.recipient_name}</span></li>
-          <li><span>Số điện thoại:</span><span>${o.recipient_phone}</span></li>
-          <li><span>Địa chỉ:</span><span>${o.recipient_address}</span></li>
-          <li><span>Thanh toán:</span><span>${paymentMethodLabel(o.payment_method)}</span></li>
-          <li><span>Trạng thái TT:</span><span>${paymentStatusBadge(o.payment_status)}</span></li>
-          <li><span>Ghi chú:</span><span>${o.notes || '—'}</span></li>
-        </ul>
+  <!-- MODAL THÊM / SỬA SẢN PHẨM -->
+  <div class="modal-backdrop" id="product-modal-backdrop" onclick="handleProductModalBackdrop(event)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-head">
+        <h2 class="modal-title" id="prod-modal-title">Thêm Sản Phẩm Mới</h2>
+        <button class="modal-close-btn" onclick="closeProductModal()">×</button>
       </div>
-      <div>
-        <h4 style="color:#5b21b6;margin:0 0 12px;font-size:15px;">🛍️ Sản phẩm</h4>
-        <div style="overflow-x:auto;">
-          <table class="ops-table" style="font-size:13px;">
-            <thead><tr><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
-            <tbody>${itemsRows}</tbody>
-            <tfoot>
-              <tr style="background:#f3f0ff;">
-                <td colspan="3" style="text-align:right;font-weight:700;color:#5b21b6;">Tổng cộng:</td>
-                <td style="text-align:right;font-weight:700;color:#16a34a;font-size:15px;">${formatVND(o.total_amount)}</td>
+
+      <form id="form-product-modal" onsubmit="handleProductFormSubmit(event)">
+        <input type="hidden" id="prod-modal-id" value="" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label for="prod-modal-category">Loại sản phẩm *</label>
+            <select id="prod-modal-category" class="form-control" required onchange="calculateModalPreviewPrice()"></select>
+          </div>
+          <div class="form-group">
+            <label for="prod-modal-code">Mã sản phẩm *</label>
+            <input type="text" id="prod-modal-code" class="form-control" required placeholder="GTR-YAM-F310" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="prod-modal-name">Tên sản phẩm *</label>
+          <input type="text" id="prod-modal-name" class="form-control" required placeholder="Tên đàn, mã dòng" />
+        </div>
+
+        <div class="form-group">
+          <label for="prod-modal-image">Link hình ảnh sản phẩm</label>
+          <input type="text" id="prod-modal-image" class="form-control" placeholder="https://... hoặc để trống" />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label for="prod-modal-cost">Giá vốn (₫) *</label>
+            <input type="number" id="prod-modal-cost" class="form-control" required min="0" step="10000" oninput="calculateModalPreviewPrice()" />
+          </div>
+          <div class="form-group">
+            <label for="prod-modal-margin">% LN riêng (Tùy chọn)</label>
+            <input type="number" id="prod-modal-margin" class="form-control" min="0" max="200" step="0.5" placeholder="Để trống = theo loại" oninput="calculateModalPreviewPrice()" />
+          </div>
+          <div class="form-group">
+            <label for="prod-modal-stock">Số lượng tồn ban đầu *</label>
+            <input type="number" id="prod-modal-stock" class="form-control" required min="0" value="10" />
+          </div>
+        </div>
+
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:0.82rem;color:var(--text-muted);">Giá bán dự kiến tính tự động:</span>
+          <strong id="prod-modal-price-preview" style="color:var(--primary);font-size:1.05rem;">0 ₫</strong>
+        </div>
+
+        <div class="form-group">
+          <label for="prod-modal-desc">Mô tả sản phẩm</label>
+          <textarea id="prod-modal-desc" class="form-control" rows="3" placeholder="Đặc điểm, âm sắc..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="prod-modal-status">Trạng thái bán hàng</label>
+          <select id="prod-modal-status" class="form-control">
+            <option value="active">Hiển thị</option>
+            <option value="hidden">Ẩn</option>
+          </select>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL TẠO / SỬA PHIẾU NHẬP -->
+  <div class="modal-backdrop" id="import-modal-backdrop" onclick="handleImportModalBackdrop(event)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-head">
+        <h2 class="modal-title" id="import-modal-title">Tạo Phiếu Nhập Hàng Mới</h2>
+        <button class="modal-close-btn" onclick="closeImportModal()">×</button>
+      </div>
+      <form id="form-import-modal" onsubmit="handleImportFormSubmit(event)">
+        <input type="hidden" id="import-modal-id" value="" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label for="import-modal-date">Ngày nhập *</label>
+            <input type="date" id="import-modal-date" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label for="import-modal-notes">Ghi chú</label>
+            <input type="text" id="import-modal-notes" class="form-control" placeholder="Ghi chú đợt nhập" />
+          </div>
+        </div>
+
+        <div style="margin-top:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="font-size:0.9rem;font-weight:700;">Danh sách sản phẩm nhập kho:</h3>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addImportItemRow()">
+            Thêm dòng
+          </button>
+        </div>
+
+        <div class="admin-table-wrap" style="margin-bottom:12px;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th class="text-right" style="width:150px;">Giá nhập (₫)</th>
+                <th class="text-center" style="width:100px;">Số lượng</th>
+                <th class="text-right" style="width:150px;">Thành tiền</th>
+                <th class="text-center" style="width:50px;">Xóa</th>
               </tr>
-            </tfoot>
+            </thead>
+            <tbody id="import-items-tbody"></tbody>
           </table>
         </div>
-      </div>
+
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-weight:700;color:var(--text-muted);font-size:0.85rem;">TỔNG TIỀN PHIẾU NHẬP:</span>
+          <strong id="import-modal-total-display" style="font-size:1.25rem;font-weight:800;color:var(--primary);">0 ₫</strong>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu phiếu nháp</button>
+        </div>
+      </form>
     </div>
-    <div style="margin-top:20px;padding:16px;background:#f3f0ff;border-radius:10px;">
-      <strong style="font-size:14px;color:#5b21b6;display:block;margin-bottom:10px;">🔄 Cập nhật trạng thái đơn hàng:</strong>
-      <div class="status-btn-bar" id="status-btn-bar-${id}">${statusButtons}</div>
-    </div>`;
+  </div>
 
-  document.getElementById('order-modal').classList.add('open');
-}
+  <!-- MODAL CHI TIẾT ĐƠN HÀNG -->
+  <div class="modal-backdrop" id="ops-order-modal-backdrop" onclick="handleOpsOrderBackdrop(event)">
+    <div class="modal-dialog" style="max-width:680px;">
+      <div class="modal-head">
+        <h2 class="modal-title">Chi Tiết Đơn Hàng</h2>
+        <button class="modal-close-btn" onclick="closeOpsOrderModal()">×</button>
+      </div>
+      <div id="ops-order-modal-body"></div>
+    </div>
+  </div>
 
-function updateOrderStatus(orderId, newStatus) {
-  const o = MOCK_ORDERS.find(x => x.id === orderId);
-  if (!o) return;
-  if (o.order_status === newStatus) return;
+  <div class="toast-container" id="toast-container"></div>
 
-  if (newStatus === 'cancelled') {
-    if (!confirm(`Xác nhận HỦY đơn hàng ${o.order_code}?\nTồn kho sẽ được khôi phục.`)) return;
-    // Restore stock
-    o.items.forEach(item => {
-      const prod = getProductById(item.product_id);
-      if (prod) prod.stock += item.quantity;
+  <script src="static/js/store.js"></script>
+  <script>
+    let currentAdminSection = 'imports';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const adminUser = MusicStoreDB.getAdminUser();
+      if (adminUser && adminUser.role === 'admin') {
+        document.documentElement.classList.add('is-admin');
+      } else {
+        document.documentElement.classList.remove('is-admin');
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetSec = urlParams.get('section') || urlParams.get('tab');
+      if (targetSec && ['dashboard', 'users', 'categories', 'products', 'imports', 'pricing', 'orders', 'inventory'].includes(targetSec)) {
+        switchAdminSection(targetSec);
+      } else {
+        switchAdminSection('imports');
+      }
     });
-    showToast(`Đã hủy đơn ${o.order_code} – tồn kho đã được khôi phục`, 'warning');
-  } else {
-    const labels = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao' };
-    showToast(`Đơn ${o.order_code} → ${labels[newStatus]}`, 'success');
-  }
 
-  o.order_status = newStatus;
+    function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('admin-username').value.trim();
+      const p = document.getElementById('admin-password').value;
+      const errorEl = document.getElementById('admin-login-error');
+      errorEl.textContent = '';
 
-  // Refresh buttons in modal
-  const bar = document.getElementById('status-btn-bar-' + orderId);
-  if (bar) {
-    const statusButtons = ['pending','processing','delivered','cancelled'].map(s => {
-      const labels2 = { pending:'Mới đặt', processing:'Đã xử lý', delivered:'Đã giao', cancelled:'Hủy đơn' };
-      const classes = { pending:'btn-warning', processing:'btn-info', delivered:'btn-success', cancelled:'btn-danger' };
-      const active = o.order_status === s ? ' active-status' : '';
-      return `<button class="btn ${classes[s]}${active} btn-sm" onclick="updateOrderStatus(${orderId},'${s}')">${labels2[s]}</button>`;
-    }).join('');
-    bar.innerHTML = statusButtons;
-  }
+      const users = MusicStoreDB.getUsers();
+      const admin = users.find(user => user.username === u && user.role === 'admin');
 
-  // Refresh orders table
-  filterOrders();
-}
+      if (!admin || admin.password !== p) {
+        errorEl.textContent = 'Tên đăng nhập hoặc mật khẩu quản trị không chính xác.';
+        return;
+      }
 
-/* ═══════════════════════════════════════════════════
-   SECTION 4: QUẢN LÝ TỒN KHO
-═══════════════════════════════════════════════════ */
-function populateInvCatFilter() {
-  const sel = document.getElementById('inv-cat-filter');
-  sel.innerHTML = '<option value="">Tất cả</option>' +
-    MOCK_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-function loadInventory(catFilter) {
-  const catId = catFilter ? parseInt(catFilter) : null;
-  let list = catId ? MOCK_PRODUCTS.filter(p => p.category_id === catId) : [...MOCK_PRODUCTS];
-  // Sort by stock ascending (lowest first)
-  list.sort((a, b) => a.stock - b.stock);
-
-  const tbody = document.getElementById('inv-tbody');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">Không có sản phẩm</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = list.map(p => {
-    const cat = getCategoryById(p.category_id);
-    let statusBadge, stockClass;
-    if (p.stock === 0) {
-      statusBadge = '<span class="badge badge-red">Hết hàng</span>';
-      stockClass = 'stock-out';
-    } else if (p.stock <= 5) {
-      statusBadge = '<span class="badge badge-orange">⚠️ Sắp hết hàng</span>';
-      stockClass = 'stock-low';
-    } else {
-      statusBadge = '<span class="badge badge-green">Còn hàng</span>';
-      stockClass = 'stock-ok';
+      MusicStoreDB.setAdminUser(admin);
+      document.documentElement.classList.add('is-admin');
+      showToast('Đăng nhập quản trị thành công.', 'success');
+      switchAdminSection('dashboard');
     }
-    return `<tr>
-      <td><code style="font-size:12px;">${p.code}</code></td>
-      <td style="font-size:13px;">${p.name}</td>
-      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
-      <td class="${stockClass}" style="font-size:16px;">${p.stock}</td>
-      <td>${statusBadge}</td>
-    </tr>`;
-  }).join('');
-}
 
-function loadLowStock() {
-  const lowList = MOCK_PRODUCTS.filter(p => p.stock <= 5);
-  const box = document.getElementById('low-stock-alert-box');
+    function handleAdminLogout() {
+      MusicStoreDB.logoutAdmin();
+      document.documentElement.classList.remove('is-admin');
+      showToast('Đã đăng xuất khỏi cổng Quản trị.', 'info');
+    }
 
-  if (!lowList.length) {
-    box.style.display = 'none';
-    return;
-  }
-  box.style.display = 'block';
+    function switchAdminSection(sectionName) {
+      currentAdminSection = sectionName;
 
-  const rows = lowList.map(p => {
-    const cat = getCategoryById(p.category_id);
-    const stockStyle = p.stock === 0 ? 'color:#dc2626;font-weight:700;' : 'color:#d97706;font-weight:700;';
-    return `<tr>
-      <td style="font-size:13px;">${p.name}</td>
-      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
-      <td style="${stockStyle}">${p.stock}</td>
-      <td><button class="btn btn-warning btn-xs" onclick="showSection('imports')">📋 Tạo phiếu nhập</button></td>
-    </tr>`;
-  }).join('');
+      document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+      const activeNav = document.getElementById(`nav-${sectionName}`);
+      if (activeNav) activeNav.classList.add('active');
 
-  box.innerHTML = `
-    <h4>⚠️ Cảnh báo hàng sắp hết
-      <span class="low-stock-count">${lowList.length} sản phẩm</span>
-    </h4>
-    <div style="overflow-x:auto;">
-      <table class="low-stock-table">
-        <thead>
-          <tr><th>Sản phẩm</th><th>Danh mục</th><th>Tồn kho</th><th>Thao tác</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
+      document.querySelectorAll('.admin-section-content').forEach(el => el.style.display = 'none');
+      const activeContent = document.getElementById(`section-${sectionName}`);
+      if (activeContent) activeContent.style.display = 'block';
 
-function loadReport() {
-  const dateFrom = document.getElementById('report-date-from').value;
-  const dateTo   = document.getElementById('report-date-to').value;
-  const resultEl = document.getElementById('report-result');
+      const titleEl = document.getElementById('admin-page-title');
+      const subEl = document.getElementById('admin-page-sub');
 
-  if (!dateFrom || !dateTo) {
-    showToast('Vui lòng chọn khoảng thời gian báo cáo', 'error');
-    return;
-  }
-  if (dateFrom > dateTo) {
-    showToast('"Từ ngày" phải nhỏ hơn hoặc bằng "Đến ngày"', 'error');
-    return;
-  }
+      if (sectionName === 'dashboard') {
+        titleEl.textContent = 'Bảng Điều Khiển Tổng Quan';
+        subEl.textContent = 'Theo dõi chỉ số kinh doanh và phân hệ quản lý';
+        renderDashboardData();
+      } else if (sectionName === 'users') {
+        titleEl.textContent = 'Quản Lý Người Dùng';
+        subEl.textContent = 'Xem, chỉnh sửa thông tin thành viên, đổi mật khẩu và khóa tài khoản';
+        renderUsersTable();
+      } else if (sectionName === 'categories') {
+        titleEl.textContent = 'Quản Lý Loại Sản Phẩm';
+        subEl.textContent = 'Thêm, sửa thông tin, ẩn hoặc xóa loại sản phẩm';
+        renderCategoriesTable();
+      } else if (sectionName === 'products') {
+        titleEl.textContent = 'Quản Lý Danh Mục Sản Phẩm';
+        subEl.textContent = 'Thêm sản phẩm, sửa hiển thị thông tin cũ, xóa hoặc ẩn';
+        populateAdminProductCatFilter();
+        renderAdminProductsTable();
+      } else if (sectionName === 'imports') {
+        titleEl.textContent = 'Quản Lý Nhập Hàng';
+        subEl.textContent = 'Tạo phiếu nhập, chỉnh sửa phiếu nháp và hoàn thành cập nhật tồn kho';
+        renderImportsTable();
+      } else if (sectionName === 'pricing') {
+        titleEl.textContent = 'Quản Lý Giá Bán';
+        subEl.textContent = 'Điều chỉnh % lợi nhuận theo loại hoặc từng sản phẩm, tra cứu giá bán';
+        renderPricingCategoryTable();
+        populatePricingCatFilter();
+        renderPricingProductsTable();
+      } else if (sectionName === 'orders') {
+        titleEl.textContent = 'Quản Lý Đơn Hàng';
+        subEl.textContent = 'Tra cứu đơn hàng theo khoảng ngày và tình trạng, xử lý và cập nhật';
+        renderAdminOrdersTable();
+      } else if (sectionName === 'inventory') {
+        titleEl.textContent = 'Tồn Kho Và Báo Cáo';
+        subEl.textContent = 'Cảnh báo sản phẩm sắp hết hàng, tra cứu tồn theo loại và báo cáo Nhập - Xuất - Tồn';
+        renderLowStockAlerts();
+        populateInvCatFilter();
+        renderInventoryByCategoryTable();
+        populateReportProdFilter();
+        renderReportTable();
+      }
+    }
 
-  // For each product, calculate: opening stock, imported qty, sold qty, closing stock
-  const reportRows = MOCK_PRODUCTS.map(p => {
-    // Imported qty in period (from completed receipts)
-    const importedQty = MOCK_IMPORT_RECEIPTS
-      .filter(r => r.status === 'completed' && r.import_date >= dateFrom && r.import_date <= dateTo)
-      .reduce((sum, r) => {
-        const item = r.items.find(i => i.product_id === p.id);
-        return sum + (item ? item.quantity : 0);
-      }, 0);
+    /* 1. DASHBOARD */
+    function renderDashboardData() {
+      const orders = MusicStoreDB.getOrders();
+      const users = MusicStoreDB.getUsers().filter(u => u.role === 'customer');
+      const products = MusicStoreDB.getProducts();
 
-    // Sold qty in period (from non-cancelled orders)
-    const soldQty = MOCK_ORDERS
-      .filter(o => o.order_status !== 'cancelled' && o.created_at.split(' ')[0] >= dateFrom && o.created_at.split(' ')[0] <= dateTo)
-      .reduce((sum, o) => {
-        const item = o.items.find(i => i.product_id === p.id);
-        return sum + (item ? item.quantity : 0);
-      }, 0);
+      const totalRev = orders
+        .filter(o => o.order_status !== 'cancelled')
+        .reduce((sum, o) => sum + o.total_amount, 0);
 
-    // Opening = current - imported + sold
-    const openingStock = p.stock - importedQty + soldQty;
-    const closingStock = p.stock;
-    const cat = getCategoryById(p.category_id);
+      document.getElementById('kpi-revenue').textContent = MusicStoreDB.formatVND(totalRev);
+      document.getElementById('kpi-orders').textContent = orders.filter(o => o.order_status === 'pending').length;
+      document.getElementById('kpi-customers').textContent = users.length;
+      document.getElementById('kpi-lowstock').textContent = products.filter(p => p.stock <= 5).length;
 
-    return { p, cat, openingStock, importedQty, soldQty, closingStock };
-  });
+      const tbody = document.querySelector('#dashboard-recent-orders-table tbody');
+      const recentOrders = orders.slice(0, 5);
 
-  const totalImport = reportRows.reduce((s, r) => s + r.importedQty, 0);
-  const totalSold   = reportRows.reduce((s, r) => s + r.soldQty, 0);
+      if (recentOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:var(--text-muted);padding:16px;">Chưa có đơn hàng nào.</td></tr>';
+        return;
+      }
 
-  const rows = reportRows.map(({ p, cat, openingStock, importedQty, soldQty, closingStock }) => `
-    <tr>
-      <td style="font-size:13px;">${p.name}</td>
-      <td style="font-size:12px;">${cat ? cat.name : '—'}</td>
-      <td style="text-align:center;">${openingStock}</td>
-      <td style="text-align:center;color:#2563eb;font-weight:600;">${importedQty}</td>
-      <td style="text-align:center;color:#dc2626;font-weight:600;">${soldQty}</td>
-      <td style="text-align:center;font-weight:700;color:#16a34a;">${closingStock}</td>
-    </tr>`).join('');
+      let html = '';
+      recentOrders.forEach(o => {
+        let statusBadge = '<span class="badge badge-warning">Mới đặt</span>';
+        if (o.order_status === 'processing') statusBadge = '<span class="badge badge-info">Đã xử lý</span>';
+        if (o.order_status === 'delivered') statusBadge = '<span class="badge badge-success">Đã giao</span>';
+        if (o.order_status === 'cancelled') statusBadge = '<span class="badge badge-danger">Đã hủy</span>';
 
-  resultEl.innerHTML = `
-    <div class="ops-table-wrap" style="margin-top:10px;">
-      <table class="report-table">
-        <thead>
+        let payLabel = 'COD';
+        if (o.payment_method === 'bank_transfer') payLabel = 'Chuyển khoản';
+        if (o.payment_method === 'online') payLabel = 'Trực tuyến';
+
+        html += `
           <tr>
-            <th>Sản phẩm</th>
-            <th>Danh mục</th>
-            <th style="text-align:center;">Tồn đầu kỳ</th>
-            <th style="text-align:center;">Nhập trong kỳ</th>
-            <th style="text-align:center;">Xuất trong kỳ</th>
-            <th style="text-align:center;">Tồn cuối kỳ</th>
+            <td><strong>${escapeHtml(o.order_code)}</strong></td>
+            <td>${MusicStoreDB.formatDate(o.created_at)}</td>
+            <td>${escapeHtml(o.recipient_name)}</td>
+            <td>${payLabel}</td>
+            <td class="text-right" style="font-weight:700;">${MusicStoreDB.formatVND(o.total_amount)}</td>
+            <td class="text-center">${statusBadge}</td>
           </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          <tr class="totals-row">
-            <td colspan="2">TỔNG CỘNG</td>
-            <td style="text-align:center;">—</td>
-            <td style="text-align:center;">${totalImport}</td>
-            <td style="text-align:center;">${totalSold}</td>
-            <td style="text-align:center;">—</td>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    /* 2. QUẢN LÝ NGƯỜI DÙNG: SỬA ĐẦY ĐỦ THÔNG TIN & ĐỔI MẬT KHẨU */
+    function renderUsersTable() {
+      const tbody = document.getElementById('users-table-tbody');
+      const kw = (document.getElementById('users-search-input').value || '').trim().toLowerCase();
+      const allUsers = MusicStoreDB.getUsers().filter(u => u.role === 'customer');
+
+      const filtered = allUsers.filter(u => {
+        if (!kw) return true;
+        return u.username.toLowerCase().includes(kw) ||
+               u.full_name.toLowerCase().includes(kw) ||
+               u.email.toLowerCase().includes(kw) ||
+               u.phone.includes(kw);
+      });
+
+      document.getElementById('users-count-label').textContent = `Tổng số: ${filtered.length} thành viên`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);padding:20px;">Không tìm thấy thành viên phù hợp.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(u => {
+        const isLocked = (u.status === 'locked');
+        const statusBadge = isLocked
+          ? '<span class="badge badge-danger">Đã khóa</span>'
+          : '<span class="badge badge-success">Hoạt động</span>';
+
+        html += `
+          <tr>
+            <td>${u.id}</td>
+            <td><strong>${escapeHtml(u.username)}</strong></td>
+            <td>${escapeHtml(u.full_name)}</td>
+            <td>
+              <div>${escapeHtml(u.email)}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${escapeHtml(u.phone)}</div>
+            </td>
+            <td style="max-width:200px;font-size:0.82rem;">${escapeHtml(u.address)}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-primary btn-sm" onclick="openEditUserModal(${u.id})">
+                Sửa thông tin
+              </button>
+            </td>
           </tr>
-        </tfoot>
-      </table>
-    </div>`;
-}
+        `;
+      });
 
-function exportReport() {
-  showToast('Chức năng xuất file đang phát triển', 'info');
-}
+      tbody.innerHTML = html;
+    }
 
-/* ═══════════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════════ */
-(function init() {
-  // Set nav-imports active by default (section-imports is already .active in HTML)
-  document.getElementById('nav-imports').classList.add('active');
-  loadImports();
+    function openEditUserModal(userId) {
+      const user = MusicStoreDB.getUserById(userId);
+      if (!user) return;
 
-  // Populate category filter for product pricing on load (lazy, called when tab opens)
-  // Populate inventory cat filter on load so it's ready
-  populateInvCatFilter();
-})();
-</script>
+      document.getElementById('user-modal-id').value = user.id;
+      document.getElementById('user-modal-username').value = user.username;
+      document.getElementById('user-modal-fullname').value = user.full_name;
+      document.getElementById('user-modal-password').value = '';
+      document.getElementById('user-modal-email').value = user.email;
+      document.getElementById('user-modal-phone').value = user.phone;
+      document.getElementById('user-modal-address').value = user.address;
+      document.getElementById('user-modal-status').value = user.status || 'active';
+
+      document.getElementById('user-modal-backdrop').classList.add('open');
+    }
+
+    function closeUserModal() {
+      document.getElementById('user-modal-backdrop').classList.remove('open');
+    }
+
+    function handleUserModalBackdrop(e) {
+      if (e.target.id === 'user-modal-backdrop') closeUserModal();
+    }
+
+    function handleUserEditSubmit(e) {
+      e.preventDefault();
+      const userId = Number(document.getElementById('user-modal-id').value);
+      const username = document.getElementById('user-modal-username').value.trim();
+      const fullName = document.getElementById('user-modal-fullname').value.trim();
+      const newPassword = document.getElementById('user-modal-password').value;
+      const email = document.getElementById('user-modal-email').value.trim();
+      const phone = document.getElementById('user-modal-phone').value.trim();
+      const address = document.getElementById('user-modal-address').value.trim();
+      const status = document.getElementById('user-modal-status').value;
+
+      const updated = {
+        username,
+        full_name: fullName,
+        email,
+        phone,
+        address,
+        status
+      };
+
+      if (newPassword && newPassword.trim()) {
+        updated.password = newPassword.trim();
+      }
+
+      MusicStoreDB.updateUser(userId, updated);
+      showToast('Đã lưu thay đổi thông tin thành viên thành công.', 'success');
+      closeUserModal();
+      renderUsersTable();
+    }
+
+    /* 3. QUẢN LÝ LOẠI SẢN PHẨM */
+    function renderCategoriesTable() {
+      const tbody = document.getElementById('categories-table-tbody');
+      const categories = MusicStoreDB.getCategories();
+      const products = MusicStoreDB.getProducts();
+
+      let html = '';
+      categories.forEach(cat => {
+        const prodCount = products.filter(p => p.category_id === cat.id).length;
+        const isHidden = (cat.status === 'hidden');
+        const statusBadge = isHidden
+          ? '<span class="badge badge-warning">Đang ẩn</span>'
+          : '<span class="badge badge-success">Hiển thị</span>';
+
+        const toggleHideBtn = isHidden
+          ? `<button type="button" class="btn btn-secondary btn-sm" onclick="toggleCategoryStatus(${cat.id}, 'active')">Hiện</button>`
+          : `<button type="button" class="btn btn-secondary btn-sm" onclick="toggleCategoryStatus(${cat.id}, 'hidden')">Ẩn</button>`;
+
+        html += `
+          <tr>
+            <td><strong style="font-family:monospace;color:var(--primary);">${escapeHtml(cat.code)}</strong></td>
+            <td><strong>${escapeHtml(cat.name)}</strong></td>
+            <td style="max-width:240px;font-size:0.82rem;color:var(--text-muted);">${escapeHtml(cat.description)}</td>
+            <td class="text-right" style="font-weight:700;color:var(--accent);">${cat.profit_margin}%</td>
+            <td class="text-center">${prodCount}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              <div style="display:flex;gap:5px;justify-content:center;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="openEditCategoryModal(${cat.id})">
+                  Sửa
+                </button>
+                ${toggleHideBtn}
+                <button type="button" class="btn btn-danger btn-sm" onclick="handleDeleteCategory(${cat.id})" title="Xóa">
+                  Xóa
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function openAddCategoryModal() {
+      document.getElementById('cat-modal-title').textContent = 'Thêm Loại Sản Phẩm Mới';
+      document.getElementById('cat-modal-id').value = '';
+      document.getElementById('form-category-modal').reset();
+      document.getElementById('cat-modal-margin').value = 20;
+      document.getElementById('category-modal-backdrop').classList.add('open');
+    }
+
+    function openEditCategoryModal(catId) {
+      const categories = MusicStoreDB.getCategories();
+      const cat = categories.find(c => c.id === Number(catId));
+      if (!cat) return;
+
+      document.getElementById('cat-modal-title').textContent = 'Chỉnh Sửa Loại Sản Phẩm';
+      document.getElementById('cat-modal-id').value = cat.id;
+      document.getElementById('cat-modal-code').value = cat.code;
+      document.getElementById('cat-modal-name').value = cat.name;
+      document.getElementById('cat-modal-margin').value = cat.profit_margin;
+      document.getElementById('cat-modal-desc').value = cat.description;
+      document.getElementById('cat-modal-status').value = cat.status || 'active';
+
+      document.getElementById('category-modal-backdrop').classList.add('open');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('category-modal-backdrop').classList.remove('open');
+    }
+
+    function handleCategoryModalBackdrop(e) {
+      if (e.target.id === 'category-modal-backdrop') closeCategoryModal();
+    }
+
+    function handleCategoryFormSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('cat-modal-id').value;
+      const code = document.getElementById('cat-modal-code').value.trim();
+      const name = document.getElementById('cat-modal-name').value.trim();
+      const margin = Number(document.getElementById('cat-modal-margin').value) || 20;
+      const desc = document.getElementById('cat-modal-desc').value.trim();
+      const status = document.getElementById('cat-modal-status').value;
+
+      if (editId) {
+        MusicStoreDB.updateCategory(editId, { code, name, profit_margin: margin, description: desc, status });
+        showToast('Cập nhật loại sản phẩm thành công.', 'success');
+      } else {
+        MusicStoreDB.addCategory({ code, name, profit_margin: margin, description: desc, status });
+        showToast('Thêm loại sản phẩm mới thành công.', 'success');
+      }
+
+      closeCategoryModal();
+      renderCategoriesTable();
+    }
+
+    function toggleCategoryStatus(catId, newStatus) {
+      MusicStoreDB.updateCategory(catId, { status: newStatus });
+      showToast(newStatus === 'hidden' ? 'Đã ẩn loại sản phẩm.' : 'Đã hiện loại sản phẩm.', 'info');
+      renderCategoriesTable();
+    }
+
+    function handleDeleteCategory(catId) {
+      if (confirm('Bạn có chắc chắn muốn xóa loại sản phẩm này?')) {
+        const res = MusicStoreDB.deleteCategory(catId);
+        if (!res.success) {
+          showToast(res.message, 'error');
+        } else {
+          showToast('Đã xóa loại sản phẩm.', 'success');
+          renderCategoriesTable();
+        }
+      }
+    }
+
+    /* 4. QUẢN LÝ DANH MỤC SẢN PHẨM */
+    function populateAdminProductCatFilter() {
+      const filterSelect = document.getElementById('admin-prod-cat-filter');
+      const modalSelect = document.getElementById('prod-modal-category');
+      const categories = MusicStoreDB.getCategories();
+
+      let filterHtml = '<option value="0">Tất cả loại sản phẩm</option>';
+      let modalHtml = '';
+
+      categories.forEach(c => {
+        filterHtml += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+        modalHtml += `<option value="${c.id}">${escapeHtml(c.name)} (${c.profit_margin}%)</option>`;
+      });
+
+      filterSelect.innerHTML = filterHtml;
+      modalSelect.innerHTML = modalHtml;
+    }
+
+    function renderAdminProductsTable() {
+      const tbody = document.getElementById('admin-products-table-tbody');
+      const kw = (document.getElementById('admin-prod-search').value || '').trim().toLowerCase();
+      const catId = Number(document.getElementById('admin-prod-cat-filter').value) || 0;
+      const statusFilter = document.getElementById('admin-prod-status-filter').value;
+
+      const products = MusicStoreDB.getProducts(true);
+      const categories = MusicStoreDB.getCategories();
+
+      const filtered = products.filter(p => {
+        if (kw && !p.name.toLowerCase().includes(kw) && !p.code.toLowerCase().includes(kw)) {
+          return false;
+        }
+        if (catId > 0 && p.category_id !== catId) return false;
+        if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="color:var(--text-muted);padding:20px;">Không tìm thấy sản phẩm nào.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(p => {
+        const cat = categories.find(c => c.id === p.category_id);
+        const catName = cat ? cat.name : '-';
+        const margin = MusicStoreDB.getProductMargin(p);
+        const sellPrice = MusicStoreDB.calcProductPrice(p);
+
+        const isHidden = (p.status === 'hidden');
+        const statusBadge = isHidden
+          ? '<span class="badge badge-warning">Đang ẩn</span>'
+          : '<span class="badge badge-success">Hiển thị</span>';
+
+        const toggleHideBtn = isHidden
+          ? `<button type="button" class="btn btn-secondary btn-sm" onclick="toggleProductHide(${p.id}, 'active')">Hiện</button>`
+          : `<button type="button" class="btn btn-secondary btn-sm" onclick="toggleProductHide(${p.id}, 'hidden')">Ẩn</button>`;
+
+        let stockBadge = `<span>${p.stock}</span>`;
+        if (p.stock <= 0) stockBadge = '<span class="badge badge-danger">Hết hàng</span>';
+        else if (p.stock <= 5) stockBadge = `<span class="badge badge-warning">Còn ${p.stock}</span>`;
+
+        html += `
+          <tr>
+            <td style="width:45px;">
+              <img src="${p.image}" alt="" style="width:40px;height:34px;object-fit:cover;border-radius:3px;" onerror="this.src=window.MusicStoreDB.getFallbackImage()" />
+            </td>
+            <td><strong style="font-family:monospace;font-size:0.78rem;">${escapeHtml(p.code)}</strong></td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(p.name)}</div>
+            </td>
+            <td>${escapeHtml(catName)}</td>
+            <td class="text-right">${MusicStoreDB.formatVND(p.cost_price)}</td>
+            <td class="text-right" style="color:var(--accent);font-weight:600;">
+              ${margin}% ${p.margin !== null ? '<span style="font-size:0.7rem;">(riêng)</span>' : ''}
+            </td>
+            <td class="text-right" style="font-weight:700;color:var(--primary);">${MusicStoreDB.formatVND(sellPrice)}</td>
+            <td class="text-center">${stockBadge}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              <div style="display:flex;gap:4px;justify-content:center;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="openEditProductModal(${p.id})">Sửa</button>
+                ${toggleHideBtn}
+                <button type="button" class="btn btn-danger btn-sm" onclick="handleDeleteProduct(${p.id})">Xóa</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function calculateModalPreviewPrice() {
+      const cost = Number(document.getElementById('prod-modal-cost').value) || 0;
+      const catId = Number(document.getElementById('prod-modal-category').value);
+      const customMargin = document.getElementById('prod-modal-margin').value;
+
+      const categories = MusicStoreDB.getCategories();
+      const cat = categories.find(c => c.id === catId);
+      const margin = (customMargin !== '' && !isNaN(customMargin))
+        ? Number(customMargin)
+        : (cat ? Number(cat.profit_margin) : 20);
+
+      const price = Math.round(cost * (1 + margin / 100));
+      document.getElementById('prod-modal-price-preview').textContent = MusicStoreDB.formatVND(price);
+    }
+
+    function openAddProductModal() {
+      document.getElementById('prod-modal-title').textContent = 'Thêm Sản Phẩm Mới';
+      document.getElementById('prod-modal-id').value = '';
+      document.getElementById('form-product-modal').reset();
+      document.getElementById('prod-modal-stock').value = 10;
+      calculateModalPreviewPrice();
+      document.getElementById('product-modal-backdrop').classList.add('open');
+    }
+
+    function openEditProductModal(productId) {
+      const product = MusicStoreDB.getProductById(productId);
+      if (!product) return;
+
+      document.getElementById('prod-modal-title').textContent = 'Chỉnh Sửa Thông Tin Sản Phẩm';
+      document.getElementById('prod-modal-id').value = product.id;
+      document.getElementById('prod-modal-category').value = product.category_id;
+      document.getElementById('prod-modal-code').value = product.code;
+      document.getElementById('prod-modal-name').value = product.name;
+      document.getElementById('prod-modal-image').value = product.image;
+      document.getElementById('prod-modal-cost').value = product.cost_price;
+      document.getElementById('prod-modal-margin').value = product.margin !== null ? product.margin : '';
+      document.getElementById('prod-modal-stock').value = product.stock;
+      document.getElementById('prod-modal-desc').value = product.description;
+      document.getElementById('prod-modal-status').value = product.status || 'active';
+
+      calculateModalPreviewPrice();
+      document.getElementById('product-modal-backdrop').classList.add('open');
+    }
+
+    function closeProductModal() {
+      document.getElementById('product-modal-backdrop').classList.remove('open');
+    }
+
+    function handleProductModalBackdrop(e) {
+      if (e.target.id === 'product-modal-backdrop') closeProductModal();
+    }
+
+    function handleProductFormSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('prod-modal-id').value;
+      const catId = Number(document.getElementById('prod-modal-category').value);
+      const code = document.getElementById('prod-modal-code').value.trim();
+      const name = document.getElementById('prod-modal-name').value.trim();
+      const image = document.getElementById('prod-modal-image').value.trim();
+      const cost = Number(document.getElementById('prod-modal-cost').value) || 0;
+      const marginRaw = document.getElementById('prod-modal-margin').value;
+      const margin = (marginRaw !== '' && !isNaN(marginRaw)) ? Number(marginRaw) : null;
+      const stock = Number(document.getElementById('prod-modal-stock').value) || 0;
+      const desc = document.getElementById('prod-modal-desc').value.trim();
+      const status = document.getElementById('prod-modal-status').value;
+
+      if (editId) {
+        MusicStoreDB.updateProduct(editId, {
+          category_id: catId,
+          code,
+          name,
+          image: image || MusicStoreDB.getFallbackImage(),
+          cost_price: cost,
+          margin,
+          stock,
+          description: desc,
+          status
+        });
+        showToast('Cập nhật sản phẩm thành công.', 'success');
+      } else {
+        MusicStoreDB.addProduct({
+          category_id: catId,
+          code,
+          name,
+          image: image || MusicStoreDB.getFallbackImage(),
+          cost_price: cost,
+          margin,
+          stock,
+          description: desc,
+          status
+        });
+        showToast('Thêm sản phẩm thành công.', 'success');
+      }
+
+      closeProductModal();
+      renderAdminProductsTable();
+    }
+
+    function toggleProductHide(productId, newStatus) {
+      MusicStoreDB.updateProduct(productId, { status: newStatus });
+      showToast(newStatus === 'hidden' ? 'Đã ẩn sản phẩm.' : 'Đã hiện sản phẩm.', 'info');
+      renderAdminProductsTable();
+    }
+
+    function handleDeleteProduct(productId) {
+      const prod = MusicStoreDB.getProductById(productId);
+      if (!prod) return;
+
+      if (confirm(`Bạn có chắc muốn xóa sản phẩm "${prod.name}"?`)) {
+        MusicStoreDB.deleteProduct(productId);
+        showToast('Đã xóa sản phẩm.', 'success');
+        renderAdminProductsTable();
+      }
+    }
+
+    /* 5. QUẢN LÝ NHẬP HÀNG */
+    function renderImportsTable() {
+      const tbody = document.getElementById('imports-table-tbody');
+      const kw = (document.getElementById('import-search-input').value || '').trim().toLowerCase();
+      const statusFilter = document.getElementById('import-status-filter').value;
+      const imports = MusicStoreDB.getImports();
+
+      const filtered = imports.filter(i => {
+        if (kw && !i.receipt_code.toLowerCase().includes(kw) && !i.notes.toLowerCase().includes(kw)) {
+          return false;
+        }
+        if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);padding:20px;">Không có phiếu nhập phù hợp.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(rec => {
+        const isCompleted = (rec.status === 'completed');
+        const statusBadge = isCompleted
+          ? '<span class="badge badge-success">Đã hoàn thành</span>'
+          : '<span class="badge badge-warning">Bản nháp</span>';
+
+        let itemsSummary = rec.items.map(it => `${it.product_name} (SL: ${it.quantity})`).join('<br />');
+
+        let actionsHtml = '';
+        if (!isCompleted) {
+          actionsHtml = `
+            <div style="display:flex;gap:5px;justify-content:center;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="openEditImportModal(${rec.id})">Sửa</button>
+              <button type="button" class="btn btn-success btn-sm" onclick="handleCompleteReceipt(${rec.id})">Hoàn thành</button>
+            </div>
+          `;
+        } else {
+          actionsHtml = `<span style="font-size:0.78rem;color:var(--text-muted);">Đã khóa</span>`;
+        }
+
+        html += `
+          <tr>
+            <td><strong style="color:var(--primary);font-family:monospace;">${escapeHtml(rec.receipt_code)}</strong></td>
+            <td>${MusicStoreDB.formatDateOnly(rec.import_date)}</td>
+            <td style="max-width:280px;font-size:0.8rem;">${itemsSummary}</td>
+            <td class="text-right" style="font-weight:700;color:var(--primary);">${MusicStoreDB.formatVND(rec.total_cost)}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td style="max-width:180px;font-size:0.8rem;color:var(--text-muted);">${escapeHtml(rec.notes || '-')}</td>
+            <td class="text-center">${actionsHtml}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function openAddImportModal() {
+      document.getElementById('import-modal-title').textContent = 'Tạo Phiếu Nhập Hàng Mới (Bản Nháp)';
+      document.getElementById('import-modal-id').value = '';
+      document.getElementById('form-import-modal').reset();
+      document.getElementById('import-modal-date').value = new Date().toISOString().substring(0, 10);
+      document.getElementById('import-items-tbody').innerHTML = '';
+      addImportItemRow();
+      document.getElementById('import-modal-backdrop').classList.add('open');
+    }
+
+    function openEditImportModal(receiptId) {
+      const imports = MusicStoreDB.getImports();
+      const rec = imports.find(i => i.id === Number(receiptId));
+      if (!rec) return;
+
+      if (rec.status === 'completed') {
+        showToast('Phiếu này đã hoàn thành, không thể chỉnh sửa.', 'error');
+        return;
+      }
+
+      document.getElementById('import-modal-title').textContent = `Chỉnh Sửa Phiếu Nhập: ${rec.receipt_code}`;
+      document.getElementById('import-modal-id').value = rec.id;
+      document.getElementById('import-modal-date').value = rec.import_date;
+      document.getElementById('import-modal-notes').value = rec.notes || '';
+
+      const tbody = document.getElementById('import-items-tbody');
+      tbody.innerHTML = '';
+      rec.items.forEach(it => {
+        addImportItemRow(it.product_id, it.import_price, it.quantity);
+      });
+
+      recalcImportModalTotal();
+      document.getElementById('import-modal-backdrop').classList.add('open');
+    }
+
+    function closeImportModal() {
+      document.getElementById('import-modal-backdrop').classList.remove('open');
+    }
+
+    function handleImportModalBackdrop(e) {
+      if (e.target.id === 'import-modal-backdrop') closeImportModal();
+    }
+
+    function addImportItemRow(selectedProdId = null, importPrice = null, quantity = 1) {
+      const tbody = document.getElementById('import-items-tbody');
+      const products = MusicStoreDB.getProducts();
+
+      let optionsHtml = '';
+      products.forEach(p => {
+        const isSel = (selectedProdId && Number(selectedProdId) === p.id) ? 'selected' : '';
+        optionsHtml += `<option value="${p.id}" data-cost="${p.cost_price}" ${isSel}>${escapeHtml(p.name)} (${p.code})</option>`;
+      });
+
+      const defaultCost = importPrice !== null ? importPrice : (products[0] ? products[0].cost_price : 1000000);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <select class="form-control item-product-select" onchange="handleImportProdSelect(this)">
+            ${optionsHtml}
+          </select>
+        </td>
+        <td>
+          <input type="number" class="form-control item-price-input text-right" value="${defaultCost}" min="1000" step="50000" oninput="recalcImportModalTotal()" />
+        </td>
+        <td>
+          <input type="number" class="form-control item-qty-input text-center" value="${quantity}" min="1" oninput="recalcImportModalTotal()" />
+        </td>
+        <td class="text-right item-subtotal-cell" style="font-weight:700;">0 ₫</td>
+        <td class="text-center">
+          <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove();recalcImportModalTotal();">Xóa</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+      recalcImportModalTotal();
+    }
+
+    function handleImportProdSelect(selectEl) {
+      const selectedOption = selectEl.options[selectEl.selectedIndex];
+      const cost = selectedOption.getAttribute('data-cost');
+      const row = selectEl.closest('tr');
+      const priceInput = row.querySelector('.item-price-input');
+      if (priceInput && cost) {
+        priceInput.value = cost;
+      }
+      recalcImportModalTotal();
+    }
+
+    function recalcImportModalTotal() {
+      const rows = document.querySelectorAll('#import-items-tbody tr');
+      let grandTotal = 0;
+
+      rows.forEach(row => {
+        const price = Number(row.querySelector('.item-price-input').value) || 0;
+        const qty = Number(row.querySelector('.item-qty-input').value) || 0;
+        const subtotal = price * qty;
+        grandTotal += subtotal;
+        row.querySelector('.item-subtotal-cell').textContent = MusicStoreDB.formatVND(subtotal);
+      });
+
+      document.getElementById('import-modal-total-display').textContent = MusicStoreDB.formatVND(grandTotal);
+    }
+
+    function handleImportFormSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('import-modal-id').value;
+      const date = document.getElementById('import-modal-date').value;
+      const notes = document.getElementById('import-modal-notes').value.trim();
+
+      const rows = document.querySelectorAll('#import-items-tbody tr');
+      if (rows.length === 0) {
+        showToast('Vui lòng thêm ít nhất 1 dòng sản phẩm.', 'warning');
+        return;
+      }
+
+      const items = [];
+      let totalCost = 0;
+
+      rows.forEach(row => {
+        const sel = row.querySelector('.item-product-select');
+        const prodId = Number(sel.value);
+        const prodName = sel.options[sel.selectedIndex].text.split('(')[0].trim();
+        const price = Number(row.querySelector('.item-price-input').value) || 0;
+        const qty = Number(row.querySelector('.item-qty-input').value) || 0;
+        const subtotal = price * qty;
+        totalCost += subtotal;
+
+        items.push({
+          product_id: prodId,
+          product_name: prodName,
+          import_price: price,
+          quantity: qty,
+          subtotal: subtotal
+        });
+      });
+
+      if (editId) {
+        MusicStoreDB.updateImportReceipt(editId, {
+          import_date: date,
+          notes: notes,
+          total_cost: totalCost,
+          items: items
+        });
+        showToast('Cập nhật phiếu nhập thành công.', 'success');
+      } else {
+        MusicStoreDB.addImportReceipt({
+          import_date: date,
+          notes: notes,
+          total_cost: totalCost,
+          items: items
+        });
+        showToast('Tạo phiếu nhập mới thành công.', 'success');
+      }
+
+      closeImportModal();
+      renderImportsTable();
+    }
+
+    function handleCompleteReceipt(receiptId) {
+      if (confirm('Hoàn thành phiếu nhập này? Hệ thống sẽ cộng dồn số lượng vào tồn kho, cập nhật giá vốn và khóa phiếu.')) {
+        const res = MusicStoreDB.completeImportReceipt(receiptId);
+        if (res.success) {
+          showToast('Đã hoàn thành phiếu nhập.', 'success');
+          renderImportsTable();
+        } else {
+          showToast(res.message, 'error');
+        }
+      }
+    }
+
+    /* 6. QUẢN LÝ GIÁ BÁN */
+    function renderPricingCategoryTable() {
+      const tbody = document.getElementById('pricing-category-tbody');
+      const categories = MusicStoreDB.getCategories();
+
+      let html = '';
+      categories.forEach(c => {
+        html += `
+          <tr>
+            <td><strong style="font-family:monospace;color:var(--primary);">${escapeHtml(c.code)}</strong></td>
+            <td><strong>${escapeHtml(c.name)}</strong></td>
+            <td class="text-right" style="font-weight:700;color:var(--accent);">${c.profit_margin}%</td>
+            <td class="text-center">
+              <div style="display:inline-flex;gap:5px;align-items:center;">
+                <input type="number" id="cat-margin-input-${c.id}" class="form-control text-center" style="width:70px;padding:4px;" value="${c.profit_margin}" min="0" max="200" step="0.5" />
+                <span style="font-size:0.8rem;">%</span>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveCategoryMargin(${c.id})">Lưu</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function saveCategoryMargin(catId) {
+      const input = document.getElementById(`cat-margin-input-${catId}`);
+      const val = Number(input.value);
+      if (isNaN(val) || val < 0) {
+        showToast('Tỷ lệ % không hợp lệ.', 'error');
+        return;
+      }
+
+      MusicStoreDB.updateCategory(catId, { profit_margin: val });
+      showToast(`Đã cập nhật % lợi nhuận thành ${val}%.`, 'success');
+      renderPricingCategoryTable();
+      renderPricingProductsTable();
+    }
+
+    function populatePricingCatFilter() {
+      const select = document.getElementById('pricing-cat-filter');
+      const categories = MusicStoreDB.getCategories();
+      let html = '<option value="0">Tất cả loại sản phẩm</option>';
+      categories.forEach(c => {
+        html += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+      });
+      select.innerHTML = html;
+    }
+
+    function renderPricingProductsTable() {
+      const tbody = document.getElementById('pricing-products-tbody');
+      const kw = (document.getElementById('pricing-search-input').value || '').trim().toLowerCase();
+      const catId = Number(document.getElementById('pricing-cat-filter').value) || 0;
+
+      const products = MusicStoreDB.getProducts(true);
+      const categories = MusicStoreDB.getCategories();
+
+      const filtered = products.filter(p => {
+        if (kw && !p.name.toLowerCase().includes(kw) && !p.code.toLowerCase().includes(kw)) {
+          return false;
+        }
+        if (catId > 0 && p.category_id !== catId) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);padding:16px;">Không tìm thấy sản phẩm.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(p => {
+        const cat = categories.find(c => c.id === p.category_id);
+        const catName = cat ? cat.name : '-';
+        const appliedMargin = MusicStoreDB.getProductMargin(p);
+        const sellPrice = MusicStoreDB.calcProductPrice(p);
+
+        html += `
+          <tr>
+            <td><strong style="font-family:monospace;font-size:0.78rem;">${escapeHtml(p.code)}</strong></td>
+            <td><strong>${escapeHtml(p.name)}</strong></td>
+            <td>${escapeHtml(catName)}</td>
+            <td class="text-right">${MusicStoreDB.formatVND(p.cost_price)}</td>
+            <td class="text-right" style="font-weight:700;color:var(--accent);">
+              ${appliedMargin}% ${p.margin !== null ? '<span class="badge badge-info" style="font-size:0.65rem;">Riêng</span>' : ''}
+            </td>
+            <td class="text-right" style="font-weight:800;color:var(--primary);">${MusicStoreDB.formatVND(sellPrice)}</td>
+            <td class="text-center">
+              <div style="display:inline-flex;gap:4px;align-items:center;">
+                <input type="number" id="prod-margin-input-${p.id}" class="form-control text-center" style="width:60px;padding:3px;" value="${p.margin !== null ? p.margin : ''}" placeholder="${cat ? cat.profit_margin : 20}" min="0" max="200" step="0.5" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="saveProductCustomMargin(${p.id})">Lưu</button>
+                <button type="button" class="btn btn-sm" style="color:var(--text-dim);" onclick="clearProductCustomMargin(${p.id})" title="Khôi phục % theo loại">Mặc định</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function saveProductCustomMargin(productId) {
+      const input = document.getElementById(`prod-margin-input-${productId}`);
+      const valRaw = input.value.trim();
+      const val = valRaw !== '' ? Number(valRaw) : null;
+
+      MusicStoreDB.updateProduct(productId, { margin: val });
+      showToast('Đã lưu % lợi nhuận riêng cho sản phẩm.', 'success');
+      renderPricingProductsTable();
+    }
+
+    function clearProductCustomMargin(productId) {
+      MusicStoreDB.updateProduct(productId, { margin: null });
+      showToast('Đã xóa % riêng, áp dụng theo danh mục.', 'info');
+      renderPricingProductsTable();
+    }
+
+    /* 7. QUẢN LÝ ĐƠN HÀNG */
+    function renderAdminOrdersTable() {
+      const tbody = document.getElementById('orders-table-tbody');
+      const fromDate = document.getElementById('order-filter-from').value;
+      const toDate = document.getElementById('order-filter-to').value;
+      const statusFilter = document.getElementById('order-filter-status').value;
+
+      const orders = MusicStoreDB.getOrders();
+
+      const filtered = orders.filter(o => {
+        if (statusFilter !== 'all' && o.order_status !== statusFilter) return false;
+        const orderDate = o.created_at.substring(0, 10);
+        if (fromDate && orderDate < fromDate) return false;
+        if (toDate && orderDate > toDate) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="color:var(--text-muted);padding:20px;">Không có đơn hàng phù hợp.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(o => {
+        let statusBadge = '<span class="badge badge-warning">Mới đặt</span>';
+        if (o.order_status === 'processing') statusBadge = '<span class="badge badge-info">Đã xử lý</span>';
+        if (o.order_status === 'delivered') statusBadge = '<span class="badge badge-success">Đã giao</span>';
+        if (o.order_status === 'cancelled') statusBadge = '<span class="badge badge-danger">Đã hủy</span>';
+
+        let payBadge = o.payment_status === 'paid'
+          ? '<span class="badge badge-success">Đã TT</span>'
+          : '<span class="badge badge-warning">Chưa TT</span>';
+
+        html += `
+          <tr>
+            <td><strong style="color:var(--primary);font-family:monospace;">${escapeHtml(o.order_code)}</strong></td>
+            <td>${MusicStoreDB.formatDate(o.created_at)}</td>
+            <td>
+              <div><strong>${escapeHtml(o.recipient_name)}</strong></div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${escapeHtml(o.recipient_phone)}</div>
+            </td>
+            <td style="max-width:180px;font-size:0.8rem;">${escapeHtml(o.recipient_address)}</td>
+            <td class="text-right" style="font-weight:700;color:var(--primary);">${MusicStoreDB.formatVND(o.total_amount)}</td>
+            <td class="text-center">${payBadge}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              <select class="form-control" style="font-size:0.78rem;padding:3px 5px;width:115px;" onchange="handleUpdateOrderStatus(${o.id}, this.value)">
+                <option value="pending" ${o.order_status === 'pending' ? 'selected' : ''}>Mới đặt</option>
+                <option value="processing" ${o.order_status === 'processing' ? 'selected' : ''}>Đã xử lý</option>
+                <option value="delivered" ${o.order_status === 'delivered' ? 'selected' : ''}>Đã giao</option>
+                <option value="cancelled" ${o.order_status === 'cancelled' ? 'selected' : ''}>Hủy đơn</option>
+              </select>
+            </td>
+            <td class="text-center">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openOpsOrderDetail(${o.id})">
+                Xem
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function handleUpdateOrderStatus(orderId, newStatus) {
+      const res = MusicStoreDB.updateOrderStatus(orderId, newStatus);
+      if (res) {
+        showToast('Cập nhật trạng thái đơn hàng thành công.', 'success');
+        renderAdminOrdersTable();
+      }
+    }
+
+    function resetOrderFilters() {
+      document.getElementById('order-filter-from').value = '';
+      document.getElementById('order-filter-to').value = '';
+      document.getElementById('order-filter-status').value = 'all';
+      renderAdminOrdersTable();
+    }
+
+    function openOpsOrderDetail(orderId) {
+      const orders = MusicStoreDB.getOrders();
+      const order = orders.find(o => o.id === Number(orderId));
+      if (!order) return;
+
+      const modalBody = document.getElementById('ops-order-modal-body');
+
+      let payLabel = 'Tiền mặt khi nhận hàng (COD)';
+      if (order.payment_method === 'bank_transfer') payLabel = 'Chuyển khoản ngân hàng';
+      if (order.payment_method === 'online') payLabel = 'Thanh toán trực tuyến';
+
+      let itemsRows = '';
+      order.items.forEach((item, idx) => {
+        itemsRows += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td><strong>${escapeHtml(item.product_name)}</strong></td>
+            <td class="text-right">${MusicStoreDB.formatVND(item.unit_price)}</td>
+            <td class="text-center">${item.quantity}</td>
+            <td class="text-right" style="font-weight:700;">${MusicStoreDB.formatVND(item.subtotal)}</td>
+          </tr>
+        `;
+      });
+
+      modalBody.innerHTML = `
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:0.85rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div><strong>Mã đơn:</strong> ${escapeHtml(order.order_code)}</div>
+            <div><strong>Ngày đặt:</strong> ${MusicStoreDB.formatDate(order.created_at)}</div>
+            <div><strong>Người nhận:</strong> ${escapeHtml(order.recipient_name)} (${escapeHtml(order.recipient_phone)})</div>
+            <div><strong>Thanh toán:</strong> ${payLabel}</div>
+            <div style="grid-column:1 / -1;"><strong>Địa chỉ:</strong> ${escapeHtml(order.recipient_address)}</div>
+          </div>
+        </div>
+
+        <div class="admin-table-wrap" style="margin-bottom:14px;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="text-center" style="width:36px;">STT</th>
+                <th>Sản phẩm</th>
+                <th class="text-right">Đơn giá</th>
+                <th class="text-center" style="width:45px;">SL</th>
+                <th class="text-right">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsRows}
+              <tr style="background:#f5f5f4;">
+                <td colspan="4" class="text-right" style="font-weight:700;">TỔNG TIỀN:</td>
+                <td class="text-right" style="font-weight:800;color:var(--primary);font-size:1.05rem;">
+                  ${MusicStoreDB.formatVND(order.total_amount)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="text-align:right;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeOpsOrderModal()">
+            Đóng
+          </button>
+        </div>
+      `;
+
+      document.getElementById('ops-order-modal-backdrop').classList.add('open');
+    }
+
+    function closeOpsOrderModal() {
+      document.getElementById('ops-order-modal-backdrop').classList.remove('open');
+    }
+
+    function handleOpsOrderBackdrop(e) {
+      if (e.target.id === 'ops-order-modal-backdrop') closeOpsOrderModal();
+    }
+
+    /* 8. QUẢN LÝ TỒN KHO & BÁO CÁO */
+    function renderLowStockAlerts() {
+      const tbody = document.getElementById('low-stock-tbody');
+      const products = MusicStoreDB.getProducts(true);
+      const categories = MusicStoreDB.getCategories();
+      const lowStockProds = products.filter(p => p.stock <= 5);
+
+      if (lowStockProds.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:var(--success);padding:14px;">Tất cả sản phẩm đều có số lượng tồn ổn định.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      lowStockProds.forEach(p => {
+        const cat = categories.find(c => c.id === p.category_id);
+        const catName = cat ? cat.name : '-';
+
+        let badge = '<span class="badge badge-warning">Còn ít</span>';
+        if (p.stock <= 0) badge = '<span class="badge badge-danger">Hết hàng</span>';
+
+        html += `
+          <tr style="background:#fff7ed;">
+            <td><strong style="font-family:monospace;color:var(--danger);">${escapeHtml(p.code)}</strong></td>
+            <td><strong>${escapeHtml(p.name)}</strong></td>
+            <td>${escapeHtml(catName)}</td>
+            <td class="text-right">${MusicStoreDB.formatVND(p.cost_price)}</td>
+            <td class="text-center" style="font-size:1.05rem;font-weight:800;color:var(--danger);">${p.stock}</td>
+            <td class="text-center">${badge}</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-primary btn-sm" onclick="switchAdminSection('imports');openAddImportModal();">
+                Tạo phiếu nhập
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function populateInvCatFilter() {
+      const select = document.getElementById('inv-cat-filter');
+      const categories = MusicStoreDB.getCategories();
+      let html = '<option value="0">Tất cả loại sản phẩm</option>';
+      categories.forEach(c => {
+        html += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+      });
+      select.innerHTML = html;
+    }
+
+    function renderInventoryByCategoryTable() {
+      const tbody = document.getElementById('inv-cat-tbody');
+      const catId = Number(document.getElementById('inv-cat-filter').value) || 0;
+      const products = MusicStoreDB.getProducts(true);
+      const categories = MusicStoreDB.getCategories();
+
+      const filtered = catId > 0 ? products.filter(p => p.category_id === catId) : products;
+
+      let html = '';
+      filtered.forEach(p => {
+        const cat = categories.find(c => c.id === p.category_id);
+        const catName = cat ? cat.name : '-';
+        const totalValue = p.cost_price * p.stock;
+
+        let statusBadge = '<span class="badge badge-success">Ổn định</span>';
+        if (p.stock <= 0) statusBadge = '<span class="badge badge-danger">Hết hàng</span>';
+        else if (p.stock <= 5) statusBadge = '<span class="badge badge-warning">Sắp hết</span>';
+
+        html += `
+          <tr>
+            <td><strong style="font-family:monospace;">${escapeHtml(p.code)}</strong></td>
+            <td><strong>${escapeHtml(p.name)}</strong></td>
+            <td>${escapeHtml(catName)}</td>
+            <td class="text-right">${MusicStoreDB.formatVND(p.cost_price)}</td>
+            <td class="text-center" style="font-weight:700;">${p.stock}</td>
+            <td class="text-right" style="font-weight:700;">${MusicStoreDB.formatVND(totalValue)}</td>
+            <td class="text-center">${statusBadge}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function populateReportProdFilter() {
+      const select = document.getElementById('rep-filter-prod');
+      const products = MusicStoreDB.getProducts(true);
+      let html = '<option value="0">Tất cả sản phẩm</option>';
+      products.forEach(p => {
+        html += `<option value="${p.id}">${escapeHtml(p.name)} (${p.code})</option>`;
+      });
+      select.innerHTML = html;
+    }
+
+    function renderReportTable() {
+      const tbody = document.getElementById('report-table-tbody');
+      const fromDate = document.getElementById('rep-filter-from').value;
+      const toDate = document.getElementById('rep-filter-to').value;
+      const prodId = Number(document.getElementById('rep-filter-prod').value) || null;
+
+      const reportData = MusicStoreDB.getInventoryReport(fromDate, toDate, prodId);
+
+      if (reportData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:var(--text-muted);padding:20px;">Không có dữ liệu báo cáo.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      reportData.forEach(r => {
+        html += `
+          <tr>
+            <td><strong style="font-family:monospace;">${escapeHtml(r.code)}</strong></td>
+            <td><strong>${escapeHtml(r.name)}</strong></td>
+            <td class="text-right" style="font-weight:600;">${r.ton_dau}</td>
+            <td class="text-right" style="font-weight:700;color:var(--info);">+${r.nhap}</td>
+            <td class="text-right" style="font-weight:700;color:var(--warning);">${r.xuat > 0 ? '-' + r.xuat : '0'}</td>
+            <td class="text-right" style="font-weight:800;color:var(--success);">${r.ton_cuoi}</td>
+            <td class="text-right" style="color:var(--text-muted);">${r.stock_current}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        toast.style.transition = 'all 0.2s ease';
+        setTimeout(() => toast.remove(), 200);
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
 </body>
 </html>

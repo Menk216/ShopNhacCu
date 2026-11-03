@@ -1,102 +1,91 @@
-# Website Bán Dụng Cụ Âm Nhạc (Melody Store)
+# Melody Store - Website Kinh Doanh Nhạc Cụ
 
-Dự án website thương mại điện tử chuyên kinh doanh nhạc cụ (Guitar, Piano & Keyboard, Trống & Bộ gõ, Violin, Kèn & Sáo, Phụ kiện âm nhạc).
-- **Backend:** Python (Flask RESTful API, SQLite)
-- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
+Melody Store là ứng dụng web thương mại điện tử chuyên cung cấp các loại nhạc cụ chính hãng (Guitar, Piano, Trống, Violin, v.v.). Hệ thống cung cấp đầy đủ hai phân hệ độc lập: phân hệ khách hàng (duyệt sản phẩm, tìm kiếm nâng cao, giỏ hàng, thanh toán, theo dõi đơn hàng) và phân hệ quản trị viên (bảng điều khiển doanh số, quản lý người dùng, danh mục nhạc cụ, nhập kho, định giá và báo cáo tồn kho).
 
 ---
 
-## 1. Hướng dẫn chạy ứng dụng
+## 1. Công nghệ sử dụng
 
-### Cách 1: Chạy nhanh bằng file `run.bat` (Khuyên dùng trên Windows)
-- Nhấp đúp chuột vào file **`run.bat`** trong thư mục dự án. Hệ thống sẽ tự động cài đặt thư viện cần thiết, khởi tạo cơ sở dữ liệu mẫu và bật máy chủ.
+- HTML5: Cấu trúc ngữ nghĩa tiêu chuẩn.
+- CSS3: Giao diện thiết kế tông màu trắng kết hợp vàng nâu gỗ guitar, hỗ trợ Responsive Web Design, Flexbox và Grid.
+- JavaScript (ES6+): Xử lý toàn bộ logic nghiệp vụ, đồng bộ dữ liệu thời gian thực.
+- LocalStorage API: Lưu trữ và đồng bộ trạng thái dữ liệu (sản phẩm, loại hàng, tài khoản, giỏ hàng, hóa đơn, phiếu nhập) hoàn toàn trên trình duyệt, không cần cấu hình cơ sở dữ liệu bên ngoài.
 
-### Cách 2: Chạy bằng dòng lệnh (Terminal / Command Prompt)
-```bash
-# 1. Cài đặt các thư viện
-pip install -r requirements.txt
+---
 
-# 2. Khởi tạo dữ liệu mẫu phong phú
-python seed_data.py
+## 2. Cấu trúc thư mục
 
-# 3. Khởi chạy máy chủ
-python app.py
+```text
+ShopNhacCu/
+│
+├── index.html              # Trang chủ và cửa hàng sản phẩm
+├── customer.html           # Cổng khách hàng (Tài khoản, Giỏ hàng, Thanh toán, Đơn mua)
+├── admin.html              # Cổng quản trị hệ thống và danh mục sản phẩm
+├── admin-ops.html          # Cổng quản trị nghiệp vụ vận hành (Nhập kho, Giá, Đơn hàng, Tồn kho)
+│
+├── static/
+│   ├── css/
+│   │   ├── style.css       # Định kiểu giao diện người dùng và trang bán hàng
+│   │   └── admin.css       # Định kiểu giao diện bảng điều khiển quản trị
+│   │
+│   └── js/
+│       └── store.js        # Cơ sở dữ liệu MusicStoreDB quản lý nghiệp vụ và LocalStorage
+│
+├── run.bat                 # Tệp lệnh khởi chạy nhanh ứng dụng
+└── README.md               # Tài liệu giới thiệu và hướng dẫn sử dụng
 ```
 
-Sau khi chạy, truy cập vào trình duyệt:
-- **Trang Khách hàng (End-user):** [http://127.0.0.1:5000](http://127.0.0.1:5000)
-- **Trang Quản trị (Admin):** [http://127.0.0.1:5000/admin/login](http://127.0.0.1:5000/admin/login)
+---
+
+## 3. Cài đặt và cách chạy
+
+Hệ thống được thiết kế dạng Web Application phía client, không yêu cầu cài đặt server hay môi trường bổ sung.
+
+### Cách 1: Mở trực tiếp trên trình duyệt
+Nhấp đúp chuột vào tệp `index.html` (hoặc mở bằng các trình duyệt phổ biến như Google Chrome, Microsoft Edge, Mozilla Firefox).
+
+### Cách 2: Sử dụng tệp khởi chạy
+Nhấp đúp chuột vào tệp `run.bat` trong thư mục gốc của dự án để trình duyệt mặc định tự động mở trang chủ.
 
 ---
 
-## 2. Tài khoản mặc định hệ thống
+## 4. Giới thiệu các trang chức năng
+
+### 4.1. Trang cửa hàng (`index.html`)
+- Hiển thị danh sách sản phẩm theo danh mục và có phân trang.
+- Tìm kiếm cơ bản theo tên nhạc cụ.
+- Tìm kiếm nâng cao kết hợp đồng thời ba tiêu chí: từ khóa tên, loại sản phẩm và khoảng giá (từ giá thấp đến giá cao).
+- Xem modal chi tiết nhạc cụ với hình ảnh, mô số kỹ thuật và nút thêm nhanh vào giỏ hàng.
+
+### 4.2. Cổng thông tin khách hàng (`customer.html`)
+- Chuyển đổi linh hoạt giữa màn hình Đăng nhập và Đăng ký tài khoản mới.
+- Quản lý hồ sơ cá nhân: cập nhật họ tên, số điện thoại, địa chỉ nhận hàng và đổi mật khẩu.
+- Giỏ hàng trực tuyến: cập nhật số lượng, tính tổng tiền tự động, xóa sản phẩm.
+- Thanh toán đơn hàng: hỗ trợ các phương thức COD (thanh toán khi nhận hàng), chuyển khoản ngân hàng và ví điện tử, cho phép dùng địa chỉ mặc định hoặc nhập địa chỉ mới.
+- Lịch sử đơn hàng: theo dõi danh sách các đơn đã đặt và chi tiết sản phẩm trong từng đơn.
+
+### 4.3. Cổng quản trị hệ thống (`admin.html`)
+- Xác thực đăng nhập dành riêng cho Quản trị viên.
+- Bảng điều khiển (Dashboard): tổng hợp KPI doanh thu, số đơn hàng mới, tổng khách hàng và cảnh báo hàng sắp hết.
+- Quản lý người dùng: xem danh sách khách hàng, tìm kiếm, chỉnh sửa toàn diện thông tin thành viên (họ tên, username, email, số điện thoại, địa chỉ, đổi mật khẩu mới) và khóa / mở khóa tài khoản.
+- Quản lý loại sản phẩm: thêm mới, cập nhật tên, mô tả, tỷ lệ phần trăm lợi nhuận định mức, ẩn hoặc xóa loại.
+- Quản lý danh mục sản phẩm: thêm sản phẩm mới, cập nhật thông tin hiển thị dữ liệu cũ, chỉnh sửa giá vốn, % lợi nhuận và ẩn/hiện sản phẩm.
+
+### 4.4. Cổng quản trị vận hành (`admin-ops.html`)
+- Quản lý nhập hàng: tạo phiếu nhập kho với chi tiết ngày nhập, số lượng và giá vốn từng mặt hàng; lưu phiếu nháp hoặc bấm hoàn thành để tự động cộng dồn tồn kho.
+- Quản lý giá bán: điều chỉnh % lợi nhuận áp dụng theo loại sản phẩm hoặc tùy chỉnh riêng cho từng sản phẩm; tự động tính giá bán theo công thức `Giá bán = Giá vốn * (1 + % Lợi nhuận / 100)`.
+- Quản lý đơn đặt hàng: tra cứu đơn hàng theo khoảng ngày và tình trạng (Mới đặt, Đã xử lý, Đã giao, Đã hủy); cập nhật trạng thái xử lý đơn.
+- Tồn kho và báo cáo: danh sách cảnh báo sản phẩm có tồn kho thấp (dưới hoặc bằng 5 sản phẩm), tra cứu tồn kho theo phân loại và xuất bảng báo cáo Nhập - Xuất - Tồn theo khoảng thời gian.
+
+---
+
+## 5. Tài khoản mẫu kiểm thử
 
 | Phân hệ | Tên đăng nhập | Mật khẩu | Ghi chú |
 |---|---|---|---|
-| **Admin (Quản trị)** | `admin` | `admin123` | Quản trị toàn quyền hệ thống |
-| **Khách hàng 1** | `khachhang1` | `123456` | Đã có sẵn đơn hàng và địa chỉ |
-| **Khách hàng 2** | `khachhang2` | `123456` | Khách hàng mua sắm |
-| **Khách hàng bị khóa** | `khachhang_bi_khoa` | `123456` | Thử nghiệm chặn đăng nhập khi tài khoản bị khóa |
+| Quản trị viên (Admin) | `admin` | `admin123` | Quản trị toàn bộ các chức năng hệ thống và vận hành |
+| Khách hàng | `khachhang1` | `123456` | Tài khoản thành viên đã có dữ liệu mẫu và đơn hàng |
+| Khách hàng | `khachhang2` | `123456` | Tài khoản thành viên bổ sung |
+| Khách hàng bị khóa | `khachhang_bi_khoa` | `123456` | Kiểm tra tính năng chặn đăng nhập đối với tài khoản bị khóa |
 
----
-
-## 3. Danh sách chức năng đã hoàn thành
-
-### I. Phân hệ Admin (Quản trị)
-1. **Giao diện Admin:**
-   - Trang đăng nhập riêng biệt độc lập tại `/admin/login`.
-   - Bảng điều khiển (Dashboard) với thống kê doanh thu, đơn hàng, hàng sắp hết và menu sidebar trực quan.
-2. **Quản lý người dùng / khách hàng:**
-   - Xem danh sách đầy đủ thông tin khách hàng.
-   - Tìm kiếm khách hàng theo tên, username, SĐT, email.
-   - Reset mật khẩu khách hàng.
-   - Khóa / Mở khóa tài khoản ngay lập tức.
-3. **Quản lý loại sản phẩm:**
-   - Thêm loại sản phẩm mới (Mã loại, Tên, Mô tả, % Lợi nhuận định mức).
-   - Chỉnh sửa thông tin loại sản phẩm.
-   - Xóa loại sản phẩm hoặc Ẩn/Hiện loại trên website.
-4. **Quản lý danh mục sản phẩm:**
-   - Thêm sản phẩm (Loại, Mã, Tên, Hình ảnh, Mô tả, Giá vốn, % Lợi nhuận riêng).
-   - Sửa sản phẩm: Form hiển thị chính xác 100% dữ liệu cũ trước khi sửa.
-   - Xóa hoặc Ẩn/Hiện sản phẩm trên trang bán hàng.
-5. **Quản lý Nhập sản phẩm:**
-   - Hiển thị danh mục phiếu nhập hàng, tìm kiếm theo mã, khoảng ngày và trạng thái.
-   - Thêm phiếu nhập hàng: Chọn ngày nhập, chọn nhiều sản phẩm, nhập giá nhập và số lượng từng loại.
-   - Sửa và Hoàn thành: Chỉ cho phép sửa phiếu khi ở trạng thái **Bản nháp**. Khi bấm **Hoàn thành**, hệ thống tự động cộng dồn tồn kho và cập nhật giá vốn, đồng thời khóa không cho sửa nữa.
-6. **Quản lý giá bán & % Lợi nhuận:**
-   - Hiển thị và cập nhật tỉ lệ % lợi nhuận theo loại sản phẩm.
-   - Cho phép thiết lập % lợi nhuận riêng cho từng sản phẩm (ghi đè loại).
-   - Bảng tra cứu giá vốn, % lợi nhuận và giá bán tự động theo công thức:
-     `Giá bán = Giá vốn * (1 + % Lợi nhuận / 100)`
-7. **Quản lý đơn đặt hàng:**
-   - Tra cứu và lọc đơn hàng theo (1) Khoảng thời gian ngày đặt (Từ ngày - Đến ngày); (2) Tình trạng đơn hàng.
-   - Xem chi tiết đơn hàng (thông tin người nhận, danh sách sản phẩm, hình thức thanh toán).
-   - Cập nhật tình trạng đơn: *Mới đặt* $\rightarrow$ *Đã xử lý* $\rightarrow$ *Đã giao* hoặc *Hủy* (tự động hoàn kho nếu hủy).
-8. **Quản lý số lượng tồn & Báo cáo:**
-   - Tra cứu tồn kho hiện tại của từng sản phẩm, lọc theo loại.
-   - Cảnh báo trực quan các sản phẩm sắp hết hàng (tồn kho $\le 5$ chiếc).
-   - Báo cáo **Nhập - Xuất - Tồn** theo khoảng thời gian tùy chọn: Tồn đầu kỳ, Nhập trong kỳ, Xuất trong kỳ, Tồn cuối kỳ và Tồn thực tế hiện tại.
-
----
-
-### II. Phân hệ Khách hàng (End-user)
-1. **Quản lý đăng nhập:**
-   - Đăng ký tài khoản mới với đầy đủ thông tin cá nhân và địa chỉ nhận hàng.
-   - Đăng nhập / Đăng xuất, hiển thị tên khách hàng và menu tài khoản trên thanh điều hướng (navbar).
-   - Quản lý (xem / sửa) hồ sơ cá nhân và đổi mật khẩu.
-   - Chặn đăng nhập nếu tài khoản bị Admin khóa.
-2. **Hiển thị & Tìm kiếm sản phẩm:**
-   - Xem sản phẩm theo phân loại có phân trang mượt mà.
-   - Trang chi tiết sản phẩm với hình ảnh lớn, thông số chi tiết, tình trạng kho và chọn số lượng mua.
-   - Tìm kiếm cơ bản theo tên nhạc cụ.
-   - Tìm kiếm nâng cao kết hợp đồng thời: Tên sản phẩm + Phân loại danh mục + Khoảng giá (Giá từ - Giá đến) trong một thao tác tìm kiếm duy nhất, có phân trang.
-3. **Giỏ hàng & Đặt hàng (Bắt buộc đăng nhập mới sử dụng được):**
-   - Chọn mua trực tiếp từ danh mục hoặc từ trang chi tiết sản phẩm.
-   - Tăng/giảm số lượng hoặc xóa sản phẩm khỏi giỏ hàng.
-   - Thanh toán (Checkout):
-     - Lựa chọn 1: Lấy địa chỉ mặc định từ tài khoản cá nhân.
-     - Lựa chọn 2: Nhập địa chỉ giao hàng mới (đầy đủ các trường: Người nhận, SĐT, Địa chỉ chi tiết, Ghi chú giao hàng).
-     - Lựa chọn phương thức thanh toán: Tiền mặt khi nhận hàng (COD - Mặc định), Chuyển khoản ngân hàng (có QR/tài khoản), Thanh toán trực tuyến.
-   - Xem lại đơn đặt hàng chi tiết ngay sau khi hoàn tất mua sắm.
-4. **Xem lại đơn hàng đã mua:**
-   - Khách hàng xem lại toàn bộ lịch sử đơn hàng đã đặt, theo dõi tiến độ xử lý đơn và chi tiết từng món hàng.
+*Ghi chú: Tại thanh điều hướng quản trị có nút "Khôi phục dữ liệu mẫu" để đưa hệ thống về dữ liệu ban đầu khi cần thiết.*
