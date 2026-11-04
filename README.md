@@ -146,7 +146,7 @@ sequenceDiagram
 
 - **Bước 1:** Trình duyệt gửi yêu cầu GET tới đường dẫn bất kỳ. Flask Server đón nhận và luôn trả về Application Shell (`index.html` cho khách hàng hoặc `admin.html` cho quản trị) cùng `window.__APP_INITIAL_STATE__` (chứa session đăng nhập, danh mục menu, badge giỏ hàng).
 - **Bước 2:** Trình duyệt nạp Application Shell và kích hoạt ES Module `router.js`.
-- **Bước 3:** Router đọc đường dẫn `window.location.pathname`, dùng Regex đối chiếu với danh sách các route đã định nghĩa.
+- **Bước 3:** Router đọc đường dẫn `window.location.pathname`, dùng các câu lệnh `if / else if` so sánh chuỗi cơ bản (ví dụ: `path === '/'`, `path.startsWith('/product/')`) để xác định chính xác trang cần hiển thị mà không cần cấu hình phức tạp.
 - **Bước 4:** Router gọi hàm `mount()` của module tương ứng (ví dụ: `home.js`, `product.js`). Module tạo khung HTML ban đầu, hiển thị spinner/skeleton và gọi API bằng `fetchAPI()`.
 - **Bước 5:** Khi API trả dữ liệu JSON, module dùng Template Literals để tạo các phần tử DOM và gắn các bộ lắng nghe sự kiện (Event Listeners).
 
@@ -345,25 +345,28 @@ Vị trí: [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/
 
 ```javascript
 // 1. Chặn hành vi reload mặc định của thẻ <a>
-document.body.addEventListener('click', (e) => {
-    const link = e.target.closest('a');
+document.body.addEventListener('click', function(event) {
+    let link = event.target.closest('a');
     if (!link) return;
-    const href = link.getAttribute('href');
+    let href = link.getAttribute('href');
     if (!href || href.startsWith('http') || href.startsWith('/admin')) return;
 
-    e.preventDefault(); // Ngăn trình duyệt reload
-    this.navigate(href); // Đẩy URL và render module
+    event.preventDefault(); // Ngăn trình duyệt reload
+    navigate(href); // Đổi URL và render module
 });
 
 // 2. Cập nhật URL mà không reload trang qua pushState()
-navigate(url) {
+function navigate(url) {
     window.history.pushState({}, '', url);
-    this.handleRoute(path, query, true);
+    let parsedUrl = new URL(url, window.location.origin);
+    handleRoute(parsedUrl.pathname, parsedUrl.searchParams, true);
 }
 
 // 3. Lắng nghe nút Back / Forward của trình duyệt qua sự kiện popstate
-window.addEventListener('popstate', (e) => {
-    this.handleRoute(window.location.pathname, new URLSearchParams(window.location.search), false);
+window.addEventListener('popstate', function() {
+    let currentPath = window.location.pathname;
+    let queryParams = new URLSearchParams(window.location.search);
+    handleRoute(currentPath, queryParams, false);
 });
 ```
 
@@ -386,8 +389,8 @@ Vị trí: Mỗi module trong `static/js/pages/` (ví dụ [home.js](file:///c:/
 2. **`destroy()`:**
    - Được Router tự động gọi ngay trước khi chuyển sang trang khác:
    ```javascript
-   if (this.currentModule && typeof this.currentModule.destroy === 'function') {
-       this.currentModule.destroy();
+   if (currentModule && typeof currentModule.destroy === 'function') {
+       currentModule.destroy();
    }
    ```
    - *Ý nghĩa:* Dỡ bỏ toàn bộ `removeEventListener`, hủy các bộ đếm `setTimeout`/`setInterval`, tránh hiện tượng rò rỉ bộ nhớ (Memory Leak) hoặc sự kiện chạy ngầm của trang cũ.
@@ -491,6 +494,15 @@ Vị trí: [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DA
 
 ---
 
+## ❓ Câu 8: Tại sao mã nguồn JavaScript Frontend được viết theo phong cách hàm thuần đơn giản, không dùng Class OOP hay Framework?
+
+### 🎯 Trả lời:
+1. **Dễ đọc, dễ giải thích khi bảo vệ đồ án:** Mã nguồn sử dụng các khái niệm JavaScript nền tảng (`let`, `const`, `function`, `if/else`, vòng lặp `for`, DOM API, Fetch API với `async/await`), giúp sinh viên tự tin giải thích cặn kẽ bản chất luồng dữ liệu mà không bị phụ thuộc vào các thư viện bên thứ ba hay cú pháp che giấu bản chất.
+2. **Hiệu năng cao & Dung lượng nhẹ:** Không phát sinh chi phí trừu tượng (overhead) từ framework lớn như React/Vue, toàn bộ trang web tải cực nhanh và chạy mượt mà ngay cả trên thiết bị cấu hình yếu.
+3. **Tuân thủ tuyệt đối quy định đồ án:** Đảm bảo toàn bộ dự án chỉ có đúng 4 file HTML (`index.html`, `admin.html`, `login.html`, `error.html`), từng chức năng là một module JS độc lập, có hàm `mount()` để khởi tạo và `destroy()` để giải phóng tài nguyên.
+
+---
+
 ## 🛠 BẢNG TRA CỨU "SỬA NHANH TẠI CHỖ" KHI GIẢNG VIÊN YÊU CẦU
 
 Khi vấn đáp, giảng viên thường yêu cầu: *"Em hãy sửa dòng code này xem trang web thay đổi như thế nào?"*. Dưới đây là vị trí chính xác để bạn chỉnh sửa ngay lập tức:
@@ -498,9 +510,9 @@ Khi vấn đáp, giảng viên thường yêu cầu: *"Em hãy sửa dòng code 
 | Giảng viên yêu cầu | Nơi cần mở file | Vị trí cần chỉnh sửa |
 |---|---|---|
 | **Đổi màu chủ đạo website** | [static/css/style.css](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/css/style.css) | Sửa `--primary: #d97706;` ở đầu file thành mã màu khác (vd: `#2563eb` - xanh dương). |
-| **Đổi số lượng sản phẩm mỗi trang** | [static/js/pages/home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js) | Sửa `limit: 8` trong `filters` thành `4` hoặc `12`. |
+| **Đổi số lượng sản phẩm mỗi trang** | [static/js/pages/home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js) | Sửa `limit: 8` trong biến `homeFilters` thành `4` hoặc `12`. |
 | **Đổi ngưỡng cảnh báo hết hàng** | [app.py](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/app.py) & [inventory.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/inventory.js) | Tìm số `5` trong `stock_quantity <= 5` đổi thành `10`. |
 | **Thay đổi cách format tiền tệ** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm hàm `formatVND(amount)`, sửa ký hiệu `' ₫'` thành `' VNĐ'`. |
 | **Đổi thời gian tự tắt thông báo** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm `setTimeout(..., 4000)`, đổi `4000` (4s) thành `2000` (2s) hoặc `6000` (6s). |
-| **Thêm cột hiển thị thông tin bảng Admin** | [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js) | Thêm thẻ `<th>` trong `renderShell()` và thêm `<td>${u.ten_thuoc_tinh}</td>` trong `loadUsers()`. |
-| **Đổi đường dẫn điều hướng trang** | [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js) | Thêm hoặc sửa biểu thức chính quy trong mảng `this.routes`. |
+| **Thêm cột hiển thị thông tin bảng Admin** | [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js) | Thêm thẻ `<th>` trong `renderUsersShell()` và thêm `<td>${u.ten_thuoc_tinh}</td>` trong hàm `loadUsers()`. |
+| **Đổi đường dẫn điều hướng trang** | [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js) | Thêm hoặc sửa nhánh điều kiện `else if (path.startsWith(...))` trong hàm `handleRoute()`. |
