@@ -88,44 +88,44 @@ def home():
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    return render_template('product_detail.html', product_id=product_id)
+    return render_template('index.html')
 
 @app.route('/cart')
 @login_required
 def cart_page():
-    return render_template('cart.html')
+    return render_template('index.html')
 
 @app.route('/checkout')
 @login_required
 def checkout_page():
-    return render_template('checkout.html')
+    return render_template('index.html')
 
 @app.route('/order-success/<order_code>')
 @login_required
 def order_success_page(order_code):
-    return render_template('order_success.html', order_code=order_code)
+    return render_template('index.html')
 
 @app.route('/orders')
 @login_required
 def customer_orders_page():
-    return render_template('orders.html')
+    return render_template('index.html')
 
 @app.route('/profile')
 @login_required
 def profile_page():
-    return render_template('profile.html')
+    return render_template('index.html')
 
 @app.route('/login')
 def customer_login_page():
     if g.user:
         return redirect(url_for('home'))
-    return render_template('login.html')
+    return render_template('login.html', mode='customer', tab='login')
 
 @app.route('/register')
 def customer_register_page():
     if g.user:
         return redirect(url_for('home'))
-    return render_template('login.html', register=True)
+    return render_template('login.html', mode='customer', tab='register')
 
 # ----------------- Admin Page Routes -----------------
 
@@ -133,48 +133,62 @@ def customer_register_page():
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard_page():
-    return render_template('admin/dashboard.html')
+    return render_template('admin.html')
 
 @app.route('/admin/login')
 def admin_login_page():
     if g.admin:
         return redirect(url_for('admin_dashboard_page'))
-    return render_template('admin/login.html')
+    return render_template('login.html', mode='admin', tab='login')
 
 @app.route('/admin/users')
 @admin_required
 def admin_users_page():
-    return render_template('admin/users.html')
+    return render_template('admin.html')
 
 @app.route('/admin/categories')
 @admin_required
 def admin_categories_page():
-    return render_template('admin/categories.html')
+    return render_template('admin.html')
 
 @app.route('/admin/products')
 @admin_required
 def admin_products_page():
-    return render_template('admin/products.html')
+    return render_template('admin.html')
 
 @app.route('/admin/imports')
 @admin_required
 def admin_imports_page():
-    return render_template('admin/imports.html')
+    return render_template('admin.html')
 
 @app.route('/admin/pricing')
 @admin_required
 def admin_pricing_page():
-    return render_template('admin/pricing.html')
+    return render_template('admin.html')
 
 @app.route('/admin/orders')
 @admin_required
 def admin_orders_page():
-    return render_template('admin/orders.html')
+    return render_template('admin.html')
 
 @app.route('/admin/inventory')
 @admin_required
 def admin_inventory_page():
-    return render_template('admin/inventory.html')
+    return render_template('admin.html')
+
+# ----------------- Error Handlers (SPA Error Shell) -----------------
+
+@app.errorhandler(404)
+def handle_404(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'API endpoint không tồn tại'}), 404
+    return render_template('error.html', error_code=404, error_message='Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.'), 404
+
+@app.errorhandler(500)
+def handle_500(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Lỗi máy chủ nội bộ'}), 500
+    return render_template('error.html', error_code=500, error_message='Đã xảy ra lỗi máy chủ nội bộ. Vui lòng thử lại sau.'), 500
 
 
 # ========================================================

@@ -1,182 +1,300 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập / Đăng Ký - Melody Store</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .auth-container {
+            max-width: 500px;
+            width: 92%;
+            margin: 3rem auto;
+            flex: 1;
+        }
+        .auth-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 2.25rem 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        }
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #f1f5f9;
+            margin-bottom: 1.75rem;
+            gap: 0.5rem;
+        }
+        .auth-tab-btn {
+            flex: 1;
+            padding: 0.75rem 0.5rem;
+            border: none;
+            background: none;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #64748b;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .auth-tab-btn.active {
+            border-bottom-color: #d97706;
+            color: #d97706;
+        }
+    </style>
+</head>
+<body>
 
-{% block title %}Đăng Nhập / Đăng Ký - Melody Store{% endblock %}
+    <!-- Header Brand -->
+    <header style="padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <a href="/" class="brand-logo" style="text-decoration: none;">
+            <span>MELODY<span class="highlight">STORE</span></span>
+        </a>
+        <a href="/" class="btn btn-sm btn-secondary">&larr; Quay lại mua sắm</a>
+    </header>
 
-{% block content %}
-<div style="max-width: 480px; margin: 2rem auto;">
-    <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07);">
-        
-        <!-- Tab selector -->
-        <div style="display: flex; border-bottom: 2px solid #f1f5f9; margin-bottom: 1.5rem;">
-            <button id="tabLoginBtn" type="button" style="flex: 1; padding: 0.75rem; border: none; background: none; font-size: 1rem; font-weight: 700; cursor: pointer; border-bottom: 2px solid #d97706; color: #d97706;" onclick="switchAuthTab('login')">
-                Đăng Nhập
-            </button>
-            <button id="tabRegisterBtn" type="button" style="flex: 1; padding: 0.75rem; border: none; background: none; font-size: 1rem; font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; color: #64748b;" onclick="switchAuthTab('register')">
-                Đăng Ký
-            </button>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a;" id="authHeaderTitle">Chào Mừng Đến Melody Store</h2>
+                <p style="color: #64748b; font-size: 0.88rem; margin-top: 0.35rem;" id="authHeaderSubtitle">Đăng nhập hoặc đăng ký tài khoản để tiếp tục</p>
+            </div>
+
+            <!-- Tabs: Khách hàng Đăng nhập | Đăng ký | Quản trị viên -->
+            <div class="auth-tabs" id="authTabs">
+                <button type="button" class="auth-tab-btn active" data-tab="login">Đăng Nhập</button>
+                <button type="button" class="auth-tab-btn" data-tab="register">Đăng Ký</button>
+                <button type="button" class="auth-tab-btn" data-tab="admin">Quản Trị Viên</button>
+            </div>
+
+            <!-- 1. Customer Login Form -->
+            <form id="customerLoginForm" style="display: block;">
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="loginUsername">Tên đăng nhập</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Nhập tên đăng nhập của bạn" required autofocus>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="loginPassword">Mật khẩu</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Nhập mật khẩu" required>
+                </div>
+
+                <button type="submit" class="btn-checkout" style="margin-top: 0; width: 100%;">Đăng Nhập Khách Hàng</button>
+            </form>
+
+            <!-- 2. Customer Register Form -->
+            <form id="customerRegisterForm" style="display: none;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="regUsername">Tên đăng nhập (*)</label>
+                    <input type="text" id="regUsername" class="form-control" placeholder="Tên tài khoản (viết liền không dấu)" required minlength="1">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="regPassword">Mật khẩu (*)</label>
+                    <input type="password" id="regPassword" class="form-control" placeholder="Mật khẩu tối thiểu 6 ký tự" required minlength="6">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="regFullName">Họ và tên (*)</label>
+                    <input type="text" id="regFullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required minlength="2">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" class="form-control" placeholder="email@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPhone">Số điện thoại (*)</label>
+                        <input type="text" id="regPhone" class="form-control" placeholder="10 số điện thoại" required maxlength="10">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="regAddress">Địa chỉ nhận hàng mặc định</label>
+                    <textarea id="regAddress" class="form-control" rows="2" placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-checkout" style="margin-top: 0; width: 100%;">Hoàn Tất Đăng Ký</button>
+            </form>
+
+            <!-- 3. Admin Login Form -->
+            <form id="adminLoginForm" style="display: none;">
+                <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: #92400e;">
+                    Dành riêng cho Quản lý & Chủ cửa hàng Melody Store.
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="adminUsername">Tên đăng nhập Quản trị (*)</label>
+                    <input type="text" id="adminUsername" class="form-control" placeholder="Tài khoản Quản trị viên" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="adminPassword">Mật khẩu Quản trị (*)</label>
+                    <input type="password" id="adminPassword" class="form-control" placeholder="Mật khẩu Quản trị" required>
+                </div>
+
+                <button type="submit" class="btn-checkout" style="margin-top: 0; width: 100%; background: #0f172a;">Đăng Nhập Quản Trị Hệ Thống</button>
+            </form>
         </div>
-
-        <!-- Login Form -->
-        <form id="customerLoginForm" style="display: block;">
-            <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label for="loginUsername">Tên đăng nhập</label>
-                <input type="text" id="loginUsername" class="form-control" placeholder="Nhập tên đăng nhập" required>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="loginPassword">Mật khẩu</label>
-                <input type="password" id="loginPassword" class="form-control" placeholder="Nhập mật khẩu" required>
-            </div>
-
-            <button type="submit" class="btn-checkout" style="margin-top: 0;">Đăng Nhập</button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="customerRegisterForm" style="display: none;">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="regUsername">Tên đăng nhập (*)</label>
-                <input type="text" id="regUsername" class="form-control" placeholder="Nhập tên đăng nhập" required minlength="1">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="regPassword">Mật khẩu (*)</label>
-                <input type="password" id="regPassword" class="form-control" placeholder="Nhập mật khẩu" required minlength="6">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="regFullName">Họ và tên (*)</label>
-                <input type="text" id="regFullName" class="form-control" placeholder="Nhập họ và tên" required minlength="2">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
-                <div class="form-group">
-                    <label for="regEmail">Email</label>
-                    <input type="email" id="regEmail" class="form-control" placeholder="email@gmail.com">
-                </div>
-                <div class="form-group">
-                    <label for="regPhone">Số điện thoại (*)</label>
-                    <input type="text" id="regPhone" class="form-control" placeholder="Nhập số điện thoại" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="regAddress">Địa chỉ giao hàng</label>
-                <textarea id="regAddress" class="form-control" rows="2" placeholder="Số nhà, tên đường, quận/huyện..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-checkout" style="margin-top: 0;">Hoàn Tất Đăng Ký</button>
-        </form>
-
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    function switchAuthTab(tab) {
-        const loginForm = document.getElementById('customerLoginForm');
-        const regForm = document.getElementById('customerRegisterForm');
-        const loginBtn = document.getElementById('tabLoginBtn');
-        const regBtn = document.getElementById('tabRegisterBtn');
+    <footer style="text-align: center; padding: 1.5rem; color: #64748b; font-size: 0.85rem;">
+        &copy; Melody Store - Hệ thống phân phối nhạc cụ chính hãng.
+    </footer>
 
-        if (tab === 'login') {
-            loginForm.style.display = 'block';
-            regForm.style.display = 'none';
-            loginBtn.style.borderBottomColor = '#d97706';
-            loginBtn.style.color = '#d97706';
-            regBtn.style.borderBottomColor = 'transparent';
-            regBtn.style.color = '#64748b';
+    <script src="/static/js/api.js"></script>
+    <script>
+        function switchTab(tab) {
+            const loginForm = document.getElementById('customerLoginForm');
+            const regForm = document.getElementById('customerRegisterForm');
+            const adminForm = document.getElementById('adminLoginForm');
+            const title = document.getElementById('authHeaderTitle');
+            const subtitle = document.getElementById('authHeaderSubtitle');
+
+            document.querySelectorAll('.auth-tab-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+            });
+
+            if (tab === 'admin') {
+                loginForm.style.display = 'none';
+                regForm.style.display = 'none';
+                adminForm.style.display = 'block';
+                title.textContent = 'Quản Trị Hệ Thống';
+                subtitle.textContent = 'Đăng nhập dành cho Quản lý & Nhân viên quản trị';
+            } else if (tab === 'register') {
+                loginForm.style.display = 'none';
+                regForm.style.display = 'block';
+                adminForm.style.display = 'none';
+                title.textContent = 'Đăng Ký Tài Khoản';
+                subtitle.textContent = 'Tạo tài khoản để đặt hàng và theo dõi bảo hành nhanh chóng';
+            } else {
+                loginForm.style.display = 'block';
+                regForm.style.display = 'none';
+                adminForm.style.display = 'none';
+                title.textContent = 'Đăng Nhập Khách Hàng';
+                subtitle.textContent = 'Đăng nhập tài khoản để tiếp tục mua sắm';
+            }
+        }
+
+        document.getElementById('authTabs').addEventListener('click', (e) => {
+            const btn = e.target.closest('.auth-tab-btn');
+            if (btn) {
+                switchTab(btn.getAttribute('data-tab'));
+            }
+        });
+
+        // Initialize active tab based on URL path or parameters
+        const path = window.location.pathname;
+        const params = new URLSearchParams(window.location.search);
+        if (path === '/admin/login' || params.get('role') === 'admin' || params.get('mode') === 'admin') {
+            switchTab('admin');
+        } else if (path === '/register' || params.get('tab') === 'register') {
+            switchTab('register');
         } else {
-            loginForm.style.display = 'none';
-            regForm.style.display = 'block';
-            regBtn.style.borderBottomColor = '#d97706';
-            regBtn.style.color = '#d97706';
-            loginBtn.style.borderBottomColor = 'transparent';
-            loginBtn.style.color = '#64748b';
+            switchTab('login');
         }
-    }
 
-    {% if register %}
-        switchAuthTab('register');
-    {% endif %}
-
-    // Handle Login
-    document.getElementById('customerLoginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-
-        try {
-            const res = await fetchAPI('/api/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password })
+        // Phone input sanitizer
+        const phoneInput = document.getElementById('regPhone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', () => {
+                phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 10);
             });
-            showToast(res.message, 'success');
-            setTimeout(() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const nextUrl = urlParams.get('next') || '/';
-                window.location.href = nextUrl;
-            }, 600);
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    });
-
-    // Handle Register
-    document.getElementById('customerRegisterForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('regUsername').value.trim();
-        const password = document.getElementById('regPassword').value.trim();
-        const fullName = document.getElementById('regFullName').value.trim();
-        const email = document.getElementById('regEmail').value.trim();
-        const phone = document.getElementById('regPhone').value.trim();
-        const address = document.getElementById('regAddress').value.trim();
-
-        if (username.length < 1) {
-            showToast('Tên đăng nhập phải có ít nhất 1 ký tự', 'error');
-            document.getElementById('regUsername').focus();
-            return;
         }
 
-        if (fullName.length < 2) {
-            showToast('Họ và tên phải có ít nhất 2 ký tự', 'error');
-            document.getElementById('regFullName').focus();
-            return;
-        }
+        // Customer Login Submit
+        document.getElementById('customerLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
 
-        if (password.length < 6) {
-            showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
-            document.getElementById('regPassword').focus();
-            return;
-        }
+            try {
+                const res = await fetchAPI('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                showToast(res.message, 'success');
+                setTimeout(() => {
+                    const next = params.get('next') || '/';
+                    window.location.href = next;
+                }, 500);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
 
-        if (!/^[0-9]{10}$/.test(phone)) {
-            showToast('Số điện thoại phải gồm đúng 10 chữ số và không được chứa chữ', 'error');
-            document.getElementById('regPhone').focus();
-            return;
-        }
+        // Customer Register Submit
+        document.getElementById('customerRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const address = document.getElementById('regAddress').value.trim();
 
-        const payload = {
-            username: username,
-            password: password,
-            full_name: fullName,
-            email: email,
-            phone: phone,
-            address: address
-        };
+            if (username.length < 1) {
+                showToast('Tên đăng nhập phải có ít nhất 1 ký tự', 'error');
+                return;
+            }
+            if (fullName.length < 2) {
+                showToast('Họ và tên phải có ít nhất 2 ký tự', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
+                return;
+            }
+            if (!phone || phone.length !== 10) {
+                showToast('Số điện thoại phải gồm đúng 10 chữ số', 'error');
+                return;
+            }
 
-        try {
-            const res = await fetchAPI('/api/auth/register', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            showToast('Đăng ký thành công! Đang chuyển hướng...', 'success');
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 600);
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    });
-</script>
-{% endblock %}
+            try {
+                const res = await fetchAPI('/api/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password, full_name: fullName, email, phone, address })
+                });
+                showToast('Đăng ký thành công!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 600);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+
+        // Admin Login Submit
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+
+            try {
+                const res = await fetchAPI('/api/admin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                showToast(res.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/admin/dashboard';
+                }, 500);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

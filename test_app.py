@@ -10,6 +10,20 @@ class MusicStoreTestCase(unittest.TestCase):
     def setUpClass(cls):
         # Ensure database is seeded
         seed_database()
+        from werkzeug.security import generate_password_hash
+        conn = database.get_db_connection()
+        if not conn.execute("SELECT id FROM users WHERE username = 'khachhang1'").fetchone():
+            conn.execute('''
+                INSERT OR IGNORE INTO users (username, password_hash, full_name, email, phone, address, role, status, created_at)
+                VALUES ('khachhang1', ?, 'Nguyễn Văn An', 'nguyenvanan@gmail.com', '0912345678', '123 Lê Lợi, Q1', 'customer', 'active', datetime('now', 'localtime'))
+            ''', (generate_password_hash('123456'),))
+        if not conn.execute("SELECT id FROM users WHERE username = 'khachhang_bi_khoa'").fetchone():
+            conn.execute('''
+                INSERT OR IGNORE INTO users (username, password_hash, full_name, email, phone, address, role, status, created_at)
+                VALUES ('khachhang_bi_khoa', ?, 'Lê Khóa', 'lekhoa@gmail.com', '0933445566', '88 Nguyễn Trãi', 'customer', 'locked', datetime('now', 'localtime'))
+            ''', (generate_password_hash('123456'),))
+        conn.commit()
+        conn.close()
 
     def setUp(self):
         self.app = app.test_client()
