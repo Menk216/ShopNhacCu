@@ -52,8 +52,10 @@ DAWEB1/
 │
 ├── static/                     # TÀI NGUYÊN FRONTEND
 │   ├── css/
-│   │   ├── style.css           # Toàn bộ CSS giao diện khách hàng (Layout, Grid, Responsive, Card)
-│   │   └── admin.css           # Toàn bộ CSS giao diện quản trị (Sidebar, Topbar, Table, Modal, Toast)
+│   │   ├── style.css           # CSS chung giao diện khách hàng (Layout, Grid, Responsive, Card)
+│   │   ├── admin.css           # CSS giao diện quản trị (Sidebar, Topbar, Table, Form quản trị)
+│   │   ├── login.css           # CSS giao diện đăng nhập / đăng ký khách hàng & quản trị
+│   │   └── components.css      # CSS thành phần dùng chung (Modal, Toast, Error page, Utility classes)
 │   └── js/
 │       ├── api.js              # Hàm tiện ích chung: fetchAPI(), showToast(), formatVND(), formatDate()
 │       ├── router.js           # SPA Router khách hàng (History API: pushState, popstate, Module Lifecycle)
@@ -500,6 +502,16 @@ Vị trí: [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DA
 1. **Dễ đọc, dễ giải thích khi bảo vệ đồ án:** Mã nguồn sử dụng các khái niệm JavaScript nền tảng (`let`, `const`, `function`, `if/else`, vòng lặp `for`, DOM API, Fetch API với `async/await`), giúp sinh viên tự tin giải thích cặn kẽ bản chất luồng dữ liệu mà không bị phụ thuộc vào các thư viện bên thứ ba hay cú pháp che giấu bản chất.
 2. **Hiệu năng cao & Dung lượng nhẹ:** Không phát sinh chi phí trừu tượng (overhead) từ framework lớn như React/Vue, toàn bộ trang web tải cực nhanh và chạy mượt mà ngay cả trên thiết bị cấu hình yếu.
 3. **Tuân thủ tuyệt đối quy định đồ án:** Đảm bảo toàn bộ dự án chỉ có đúng 4 file HTML (`index.html`, `admin.html`, `login.html`, `error.html`), từng chức năng là một module JS độc lập, có hàm `mount()` để khởi tạo và `destroy()` để giải phóng tài nguyên.
+
+---
+
+## ❓ Câu 9: Tại sao dự án tách hoàn toàn CSS ra khỏi HTML, không dùng thẻ <style> và thuộc tính style=""?
+
+### 🎯 Trả lời:
+1. **Nguyên lý phân tách mối quan tâm (Separation of Concerns):** HTML chỉ đảm nhận cấu trúc dữ liệu và ngữ nghĩa (Semantic structure), CSS chịu trách nhiệm trình bày giao diện (Presentation & Styling), JavaScript xử lý nghiệp vụ và điều hướng (Behavior). Không trộn lẫn CSS vào HTML giúp mã nguồn trong sáng, dễ đọc và dễ bảo vệ trước hội đồng.
+2. **Khả năng tái sử dụng & Dễ bảo trì:** Định dạng được gom nhóm vào 4 file CSS chuyên biệt (`style.css`, `admin.css`, `login.css`, `components.css`). Khi cần thay đổi thiết kế (ví dụ đổi màu sắc thương hiệu, độ bo góc, khoảng cách), chỉ cần sửa tại một file CSS duy nhất mà không phải rà soát từng dòng HTML.
+3. **Tận dụng bộ nhớ đệm trình duyệt (Browser Caching):** Các file `.css` tĩnh được trình duyệt tải một lần và lưu vào cache. Các lần truy cập tiếp theo hoặc khi chuyển trang trong SPA không làm phát sinh lưu lượng tải lại mã CSS.
+4. **Điều khiển trạng thái giao diện chuẩn mực qua DOM API:** Thay vì can thiệp trực tiếp vào `element.style.display` gây phân mảnh mã nguồn, dự án sử dụng các class trạng thái (`.active`, `.hidden`) kết hợp cùng các phương thức `classList.add()`, `classList.remove()`, `classList.toggle()`, giúp việc debug CSS trực quan qua DevTools.
 
 ---
 

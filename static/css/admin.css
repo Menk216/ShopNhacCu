@@ -496,3 +496,16 @@ body {
         opacity: 1;
     }
 }
+
+
+/* Sidebar Current User */
+.sidebar-user-label {
+    color: #64748b;
+    font-size: 0.8rem;
+    display: block;
+}
+
+.sidebar-user-name {
+    color: #f8fafc;
+    font-weight: 600;
+}

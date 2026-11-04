@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Quản Trị - Melody Store</title>
-    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
 </head>
 <body>
 
@@ -42,9 +43,9 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div>
-                <span style="color: #64748b; font-size: 0.8rem;">Đang đăng nhập:</span>
-                <div style="color: #f8fafc; font-weight: 600;">{{ current_admin.full_name or 'Quản trị viên' }}</div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-label">Đang đăng nhập:</span>
+                <div class="sidebar-user-name">{{ current_admin.full_name or 'Quản trị viên' }}</div>
             </div>
             <button onclick="handleAdminLogout()" class="btn-admin-logout" title="Đăng xuất">
                 Đăng xuất

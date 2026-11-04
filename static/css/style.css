@@ -955,3 +955,198 @@ body {
     font-size: 0.9rem;
 }
 
+
+
+/* Header & Navigation Utilities */
+.btn-nav-register {
+    padding: 0.45rem 1.1rem;
+    font-size: 0.85rem;
+}
+
+.icon-search {
+    vertical-align: middle;
+}
+
+/* Footer Components */
+.footer-brand-logo {
+    margin-bottom: 0.75rem;
+}
+
+.footer-description {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    max-width: 380px;
+}
+
+.footer-title {
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.footer-links {
+    list-style: none;
+    font-size: 0.88rem;
+    line-height: 2;
+}
+
+.footer-link-item {
+    color: #94a3b8;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-link-item:hover {
+    color: #ffffff;
+}
+
+.footer-contact-info {
+    font-size: 0.88rem;
+    line-height: 1.8;
+}
+
+.footer-admin-link-wrapper {
+    margin-top: 1rem;
+}
+
+.footer-admin-link {
+    color: #64748b;
+    font-size: 0.78rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-admin-link:hover {
+    color: #94a3b8;
+}
+
+/* Quick Orders Modal Styles */
+.quick-orders-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.quick-orders-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+}
+
+.quick-orders-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.quick-orders-empty-title {
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.quick-orders-empty-desc {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.quick-orders-empty-btn {
+    margin-top: 1rem;
+}
+
+.quick-orders-card {
+    margin-bottom: 1rem;
+    padding: 1.25rem;
+}
+
+.quick-orders-code {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #0f172a;
+}
+
+.quick-orders-date {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-left: 0.75rem;
+}
+
+.quick-orders-items-list {
+    margin-bottom: 1rem;
+}
+
+.quick-orders-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed #f1f5f9;
+}
+
+.quick-orders-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.quick-orders-item-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.quick-orders-item-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.quick-orders-item-qty {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.quick-orders-item-subtotal {
+    font-weight: 700;
+    color: #b45309;
+    font-size: 0.95rem;
+}
+
+.quick-orders-summary-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+.quick-orders-recipient {
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+.quick-orders-total-box {
+    text-align: right;
+}
+
+.quick-orders-total-label {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.quick-orders-total-amount {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #b45309;
+}
+
+.quick-orders-error {
+    color: #ef4444;
+    padding: 1.5rem;
+    text-align: center;
+}
