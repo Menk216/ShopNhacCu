@@ -104,8 +104,8 @@ export const AdminOrdersModule = {
                                 <select id="modalOrderStatusSelect" class="form-control" required>
                                     <option value="pending">Mới đặt</option>
                                     <option value="processing">Đã xử lý</option>
-                                    <option value="delivered">Đã giao</option>
-                                    <option value="cancelled">Hủy (Tự động hoàn tồn kho)</option>
+                                    <option value="delivered">Đã giao (Trừ tồn kho)</option>
+                                    <option value="cancelled">Hủy (Tự động hoàn tồn kho nếu đã giao)</option>
                                 </select>
                             </div>
                             <div class="form-group">

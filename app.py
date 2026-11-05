@@ -647,14 +647,16 @@ def api_checkout():
             'subtotal': subtotal
         })
 
-    order_code = f"DH-{datetime.now().strftime('%Y%m%d%H%M%S')}-{g.user['id']}"
+    now_dt = datetime.now()
+    created_at = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+    order_code = f"DH-{now_dt.strftime('%Y%m%d%H%M%S')}-{g.user['id']}"
     payment_status = 'paid' if payment_method == 'online' else 'unpaid'
 
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', 'localtime'))
-    ''', (order_code, g.user['id'], recipient_name, recipient_phone, recipient_address, payment_method, payment_status, total_amount, notes))
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+    ''', (order_code, g.user['id'], recipient_name, recipient_phone, recipient_address, payment_method, payment_status, total_amount, notes, created_at))
     order_id = cursor.lastrowid
 
     for item in items_to_create:
@@ -662,10 +664,8 @@ def api_checkout():
             INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, subtotal)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (order_id, item['product_id'], item['product_name'], item['unit_price'], item['quantity'], item['subtotal']))
-        # Deduct stock
-        cursor.execute('''
-            UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?
-        ''', (item['quantity'], item['product_id']))
+        # Lưu ý nghiệp vụ: Không trừ tồn kho tại bước đặt hàng.
+        # Tồn kho chỉ được trừ khi Quản trị viên duyệt xác nhận giao hàng (status = 'delivered').
 
     # Clear user's cart
     cursor.execute("DELETE FROM cart_items WHERE user_id = ?", (g.user['id'],))
@@ -1565,19 +1565,35 @@ def api_admin_update_order_status(order_id):
         return jsonify({'success': False, 'message': 'Không tìm thấy đơn hàng'}), 404
 
     old_status = order['order_status']
-
-    # If cancelling an active order, restore stock
     cursor = conn.cursor()
-    if new_status == 'cancelled' and old_status != 'cancelled':
+
+    # 1. Khi Quản trị viên duyệt xác nhận giao hàng (chuyển sang 'delivered' từ trạng thái khác):
+    # Kiểm tra tồn kho thực tế và thực hiện trừ kho
+    if new_status == 'delivered' and old_status != 'delivered':
+        items = cursor.execute('''
+            SELECT oi.product_id, oi.quantity, p.name as product_name, p.stock_quantity
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = ?
+        ''', (order_id,)).fetchall()
+
+        for it in items:
+            if it['stock_quantity'] < it['quantity']:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'message': f'Không thể xác nhận giao hàng: Sản phẩm "{it["product_name"]}" trong kho chỉ còn {it["stock_quantity"]} cái (cần giao {it["quantity"]})'
+                }), 400
+
+        for it in items:
+            cursor.execute("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?", (it['quantity'], it['product_id']))
+
+    # 2. Nếu đơn hàng trước đó đã giao ('delivered') nhưng sau đó bị hủy hoặc chuyển về trạng thái khác:
+    # Hoàn lại số lượng tồn kho sản phẩm
+    elif old_status == 'delivered' and new_status != 'delivered':
         items = cursor.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
         for it in items:
             cursor.execute("UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?", (it['quantity'], it['product_id']))
-
-    # If uncancelling an order, re-deduct stock
-    elif old_status == 'cancelled' and new_status != 'cancelled':
-        items = cursor.execute("SELECT product_id, quantity FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
-        for it in items:
-            cursor.execute("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?", (it['quantity'], it['product_id']))
 
     # Automatic payment status update on delivery
     if new_status == 'delivered' and not payment_status:
@@ -1706,12 +1722,12 @@ def api_admin_inventory_report():
             WHERE iri.product_id = ? AND ir.status = 'completed' AND date(ir.import_date) < date(?)
         ''', (pid, from_date)).fetchone()[0] or 0
 
-        # 2. Total Non-cancelled Exports (Orders) BEFORE from_date
+        # 2. Total Delivered Exports (Orders) BEFORE from_date
         exp_before = conn.execute('''
             SELECT SUM(oi.quantity) 
             FROM order_items oi
             JOIN orders o ON oi.order_id = o.id
-            WHERE oi.product_id = ? AND o.order_status != 'cancelled' AND date(o.created_at) < date(?)
+            WHERE oi.product_id = ? AND o.order_status = 'delivered' AND date(o.created_at) < date(?)
         ''', (pid, from_date)).fetchone()[0] or 0
 
         # Opening stock
@@ -1726,12 +1742,12 @@ def api_admin_inventory_report():
               AND date(ir.import_date) >= date(?) AND date(ir.import_date) <= date(?)
         ''', (pid, from_date, to_date)).fetchone()[0] or 0
 
-        # 4. Exports DURING period [from_date, to_date]
+        # 4. Exports DURING period [from_date, to_date] (chỉ tính đơn đã giao thực xuất khỏi kho)
         exp_period = conn.execute('''
             SELECT SUM(oi.quantity) 
             FROM order_items oi
             JOIN orders o ON oi.order_id = o.id
-            WHERE oi.product_id = ? AND o.order_status != 'cancelled'
+            WHERE oi.product_id = ? AND o.order_status = 'delivered'
               AND date(o.created_at) >= date(?) AND date(o.created_at) <= date(?)
         ''', (pid, from_date, to_date)).fetchone()[0] or 0
 

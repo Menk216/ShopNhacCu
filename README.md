@@ -248,14 +248,14 @@ sequenceDiagram
     API-->>Checkout: Dữ liệu giỏ hàng + Địa chỉ/SĐT người nhận mặc định
     Customer->>Checkout: Chọn phương thức (COD / Chuyển khoản QR / Thẻ) & Bấm "Đặt hàng"
     Checkout->>API: POST /api/checkout { recipient_name, phone, address, payment_method }
-    API->>DB: Bắt đầu Transaction: Tạo Order, trừ tồn kho, xóa giỏ hàng
+    API->>DB: Bắt đầu Transaction: Tạo Order (pending), xóa giỏ hàng (chưa trừ kho)
     DB-->>API: Transaction Commit thành công
     API-->>Checkout: { success: true, order_code: "DH-XXXXXX" }
     Checkout-->>Customer: Điều hướng sang /order-success/:order_code
 ```
 
 - **Cập nhật huy hiệu giỏ hàng (Cart Badge):** Ngay khi thêm hàng thành công, Header lắng nghe hoặc cập nhật trực tiếp `#cartBadgeCount` theo thời gian thực mà không cần tải lại trang.
-- **An toàn giao dịch:** Tại bước thanh toán (`POST /api/checkout`), Flask Backend thực hiện giao dịch an toàn (Database Transaction): kiểm tra lại tồn kho thực tế, tạo bản ghi đơn hàng, lưu chi tiết từng món hàng, trừ tồn kho và làm rỗng giỏ hàng.
+- **An toàn giao dịch & Logic trừ kho:** Tại bước thanh toán (`POST /api/checkout`), Flask Backend thực hiện giao dịch an toàn (Database Transaction): kiểm tra tồn kho còn đủ, tạo bản ghi đơn hàng ở trạng thái `pending` (mới đặt), lưu chi tiết từng món hàng và làm rỗng giỏ hàng. Tồn kho sản phẩm chỉ thực sự bị trừ khi Quản trị viên duyệt xác nhận giao hàng (`delivered`), và tự động hoàn trả tồn kho nếu đơn hàng đã giao bị hủy.
 
 ---
 
