@@ -1,9 +1,14 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, g
 from werkzeug.security import generate_password_hash, check_password_hash
 import database
+
+def get_vietnam_now():
+    """Lấy thời gian hiện tại chuẩn múi giờ Việt Nam (UTC+7 / Asia/Ho_Chi_Minh)."""
+    vn_tz = timezone(timedelta(hours=7))
+    return datetime.now(vn_tz)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -647,14 +652,16 @@ def api_checkout():
             'subtotal': subtotal
         })
 
-    order_code = f"DH-{datetime.now().strftime('%Y%m%d%H%M%S')}-{g.user['id']}"
+    vn_now = get_vietnam_now()
+    order_code = f"DH-{vn_now.strftime('%Y%m%d%H%M%S')}-{g.user['id']}"
+    order_created_at = vn_now.strftime('%Y-%m-%d %H:%M:%S')
     payment_status = 'paid' if payment_method == 'online' else 'unpaid'
 
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', 'localtime'))
-    ''', (order_code, g.user['id'], recipient_name, recipient_phone, recipient_address, payment_method, payment_status, total_amount, notes))
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+    ''', (order_code, g.user['id'], recipient_name, recipient_phone, recipient_address, payment_method, payment_status, total_amount, notes, order_created_at))
     order_id = cursor.lastrowid
 
     for item in items_to_create:

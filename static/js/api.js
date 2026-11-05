@@ -13,17 +13,19 @@ function formatDate(dateStr) {
         const s = String(dateStr).trim();
         const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
         if (m) {
-            const [_, y, mo, d, h, mi] = m;
-            return `${d}/${mo}/${y} ${h}:${mi}`;
+            const [_, y, mo, d, h, mi, se] = m;
+            const secStr = se ? `:${se}` : '';
+            return `${d}/${mo}/${y} ${h}:${mi}${secStr}`;
         }
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('vi-VN', {
+        return d.toLocaleString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            second: '2-digit'
         });
     } catch (e) {
         return dateStr;

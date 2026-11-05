@@ -1,6 +1,6 @@
 import sqlite3
 from werkzeug.security import generate_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import database
 
 def seed_database():
@@ -313,9 +313,11 @@ def seed_database():
         (receipt_3_id, 11, 8200000.0, 2, 16400000.0),  # Yamaha Violin V5SC
     ])
 
-    # 5. Seed Orders (Đơn đặt hàng)
+    # 5. Seed Orders (Đơn đặt hàng chuẩn múi giờ Việt Nam UTC+7)
+    vn_tz = timezone(timedelta(hours=7))
+    now_vn = datetime.now(vn_tz)
     # Order 1: Delivered (đã giao 7 ngày trước)
-    date_7_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+    date_7_days_ago = (now_vn - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
         VALUES (?, 2, ?, ?, ?, 'cod', 'paid', 'delivered', ?, ?, ?)
@@ -332,7 +334,7 @@ def seed_database():
     ''', (order_1_id,))
 
     # Order 2: Processing (đã xử lý 2 ngày trước)
-    date_2_days_ago = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S')
+    date_2_days_ago = (now_vn - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
         VALUES (?, 3, ?, ?, ?, 'bank_transfer', 'paid', 'processing', ?, ?, ?)
@@ -345,10 +347,11 @@ def seed_database():
     ''', (order_2_id,))
 
     # Order 3: Pending (mới đặt hôm nay)
+    date_now = now_vn.strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
-        VALUES (?, 2, ?, ?, ?, 'cod', 'unpaid', 'pending', ?, ?, CURRENT_TIMESTAMP)
-    ''', ('DH-2026-003', 'Nguyễn Văn An', '0912345678', 'Chung cư Sunrise City, Quận 7, TP.HCM', 1067000.0, 'Giao cuối tuần'))
+        VALUES (?, 2, ?, ?, ?, 'cod', 'unpaid', 'pending', ?, ?, ?)
+    ''', ('DH-2026-003', 'Nguyễn Văn An', '0912345678', 'Chung cư Sunrise City, Quận 7, TP.HCM', 1067000.0, 'Giao cuối tuần', date_now))
     order_3_id = cursor.lastrowid
 
     cursor.execute('''
@@ -357,7 +360,7 @@ def seed_database():
     ''', (order_3_id,))
 
     # Order 4: Cancelled (đã hủy)
-    date_10_days_ago = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d %H:%M:%S')
+    date_10_days_ago = (now_vn - timedelta(days=10)).strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
         INSERT INTO orders (order_code, user_id, recipient_name, recipient_phone, recipient_address, payment_method, payment_status, order_status, total_amount, notes, created_at)
         VALUES (?, 3, ?, ?, ?, 'online', 'unpaid', 'cancelled', ?, ?, ?)
