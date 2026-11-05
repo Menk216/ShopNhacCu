@@ -39,7 +39,7 @@ class MusicStoreTestCase(unittest.TestCase):
             'password': 'password123',
             'full_name': 'Khách Hàng Test',
             'email': f'{unique_user}@example.com',
-            'phone': '0912999888',
+            'phone': f'09{(int(time.time()*1000) % 100000000):08d}',
             'address': '456 Phố Huế, Hai Bà Trưng, Hà Nội'
         })
         self.assertEqual(reg_res.status_code, 200)

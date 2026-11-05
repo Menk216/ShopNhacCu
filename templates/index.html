@@ -96,7 +96,7 @@
                     <div>Email: support@melodystore.vn</div>
                     <div>Địa chỉ: 123 Phố Nhạc Cụ, Quận 1, TP. Hồ Chí Minh</div>
                     <div class="footer-admin-link-wrapper">
-                        <a href="/admin/login" class="footer-admin-link" onclick="openAdminLoginModal(event)">Đăng nhập Quản trị</a>
+                        <a href="/admin/login" class="footer-admin-link">Đăng nhập Quản trị</a>
                     </div>
                 </div>
             </div>
@@ -124,35 +124,6 @@
     {% endif %}
 
     
-    <!-- Quick Admin Login Modal (Hiện lên chỉ khi ấn vào nút Đăng nhập Quản trị ở cuối trang) -->
-    <div id="adminLoginModal" class="modal-overlay">
-        <div class="modal-content modal-content-sm" style="border-top: 4px solid #0f172a; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
-            <div class="modal-header" style="align-items: flex-start;">
-                <div>
-                    <h3 class="modal-title" style="color: #0f172a; font-weight: 800; font-size: 1.15rem; margin-bottom: 2px;">Đăng Nhập Quản Trị Hệ Thống</h3>
-                    <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Dành riêng cho Ban Quản trị & Quản lý cửa hàng</p>
-                </div>
-                <button class="modal-close" onclick="closeAdminLoginModal()" type="button">&times;</button>
-            </div>
-            <form id="modalAdminLoginForm" style="padding-top: 0.25rem;">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="modalAdminUsername" style="font-weight: 600; font-size: 0.88rem; color: #1e293b;">Tên đăng nhập Quản trị (*)</label>
-                    <input type="text" id="modalAdminUsername" class="form-control" placeholder="Nhập tài khoản Quản trị (vd: admin)" required autofocus>
-                </div>
-                <div class="form-group" style="margin-bottom: 1.25rem;">
-                    <label for="modalAdminPassword" style="font-weight: 600; font-size: 0.88rem; color: #1e293b;">Mật khẩu (*)</label>
-                    <input type="password" id="modalAdminPassword" class="form-control" placeholder="Nhập mật khẩu Quản trị" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 700; background: #0f172a; border-color: #0f172a; justify-content: center;">
-                    Đăng Nhập Quản Trị &rarr;
-                </button>
-                <div style="text-align: center; margin-top: 1rem;">
-                    <a href="/admin/login" style="font-size: 0.82rem; color: #64748b; text-decoration: underline;">Mở trang đăng nhập toàn màn hình</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Global App State -->
     <script>
         window.__APP_INITIAL_STATE__ = {
@@ -305,56 +276,6 @@
         window.closeQuickOrdersModal = closeQuickOrdersModal;
     </script>
     <script src="/static/js/api.js"></script>
-    <script>
-        function openAdminLoginModal(e) {
-            if (e) e.preventDefault();
-            const modal = document.getElementById('adminLoginModal');
-            if (modal) {
-                modal.classList.add('active');
-                const userInp = document.getElementById('modalAdminUsername');
-                if (userInp) setTimeout(() => userInp.focus(), 150);
-            }
-        }
-        window.openAdminLoginModal = openAdminLoginModal;
-
-        function closeAdminLoginModal() {
-            const modal = document.getElementById('adminLoginModal');
-            if (modal) modal.classList.remove('active');
-        }
-        window.closeAdminLoginModal = closeAdminLoginModal;
-
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('adminLoginModal');
-            if (modal && e.target === modal) {
-                closeAdminLoginModal();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const modalForm = document.getElementById('modalAdminLoginForm');
-            if (modalForm) {
-                modalForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const username = document.getElementById('modalAdminUsername').value.trim();
-                    const password = document.getElementById('modalAdminPassword').value.trim();
-
-                    try {
-                        const res = await fetchAPI('/api/admin/login', {
-                            method: 'POST',
-                            body: JSON.stringify({ username, password })
-                        });
-                        showToast(res.message, 'success');
-                        setTimeout(() => {
-                            window.location.href = '/admin/dashboard';
-                        }, 500);
-                    } catch (err) {
-                        showToast(err.message, 'error');
-                    }
-                });
-            }
-        });
-
-    </script>
     <script type="module" src="/static/js/router.js"></script>
 </body>
 </html>
