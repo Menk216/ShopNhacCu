@@ -1,9 +1,10 @@
 # Website Bán Dụng Cụ Âm Nhạc (Melody Store) - SPA Architecture
 
 Dự án website thương mại điện tử chuyên kinh doanh nhạc cụ chính hãng (Guitar, Piano & Keyboard, Trống & Bộ gõ, Violin, Kèn & Sáo, Phụ kiện âm nhạc).
-- **Backend:** Python (Flask RESTful API, SQLite 3)
-- **Frontend:** Single Page Application (SPA) xây dựng bằng HTML5, CSS3, JavaScript Thuần (Vanilla ES6+ Modules, History API Router).
-- **Quy chuẩn đặc biệt:** Toàn bộ dự án tuân thủ nghiêm ngặt **tối đa đúng 4 file HTML (.html)**, không có file thứ 5, toàn bộ nội dung chức năng được render động qua JavaScript.
+- **🌐 Website trực tuyến (Live Demo):** [https://shopnhaccu.onrender.com](https://shopnhaccu.onrender.com)
+- **📦 Mã nguồn GitHub:** [https://github.com/Menk216/ShopNhacCu](https://github.com/Menk216/ShopNhacCu)
+- **⚙️ Backend:** Python (Flask RESTful API, SQLite 3, Gunicorn)
+- **🎨 Frontend:** Single Page Application (SPA) xây dựng bằng HTML5, CSS3, JavaScript Thuần (Vanilla ES6+ Modules, History API Router).
 
 ---
 
@@ -42,7 +43,7 @@ Sau khi chạy, truy cập vào trình duyệt:
 ## 3. Cấu trúc thư mục dự án (Kiến trúc SPA Chuẩn)
 
 ```text
-DAWEB1/
+ShopNhacCu/
 ├── app.py                      # Backend: Flask RESTful APIs, Session Auth, Routing Application Shells
 ├── database.py                 # Schema SQLite (8 bảng), kết nối DB & công thức định giá bán
 ├── seed_data.py                # Script nạp dữ liệu mẫu ban đầu (danh mục, nhạc cụ, tài khoản)
@@ -82,7 +83,7 @@ DAWEB1/
 └── templates/                  # DUY NHẤT 4 FILE HTML (.html) TRÊN TOÀN BỘ DỰ ÁN
     ├── index.html              # Application Shell dành cho Khách hàng (Header, Nav, Footer, #app)
     ├── admin.html              # Application Shell dành cho Quản trị viên (Sidebar, Topbar, #admin-app)
-    ├── login.html              # Giao diện Đăng nhập & Đăng ký hợp nhất (Khách hàng + Quản trị viên)
+    ├── login.html              # Giao diện Xác thực phân tách theo vai trò: Khách hàng (2 tabs) & Quản trị viên (/admin/login)
     └── error.html              # Giao diện thông báo lỗi chung (404, 500,...)
 ```
 
@@ -91,7 +92,6 @@ DAWEB1/
 ## 4. Các tính năng nổi bật của kiến trúc SPA
 
 ### 1. Kiến trúc Application Shell & Render động hoàn toàn
-- Dự án tuân thủ nghiêm ngặt quy định: **Tối đa 4 file `.html`** trên toàn bộ mã nguồn.
 - Mọi trang nội dung (trang chủ, chi tiết sản phẩm, giỏ hàng, thanh toán, lịch sử đơn, hồ sơ cá nhân, dashboard, quản lý sản phẩm, nhập hàng,...) đều được render động bằng **JavaScript Template Literals & DOM API** thông qua các ES Module độc lập.
 - Khi chuyển đổi tính năng, **trình duyệt không tải lại (reload) toàn bộ trang web**, giữ nguyên trạng thái ứng dụng và đem lại trải nghiệm mượt mà tức thì.
 
@@ -318,213 +318,3 @@ sequenceDiagram
 - **Bảo mật 2 lớp:**
   - **Lớp Frontend (UX):** Kiểm tra trạng thái người dùng trong `window.__APP_INITIAL_STATE__`. Nếu chưa đăng nhập, tự động chuyển hướng sang trang đăng nhập kèm tham số `?next=...` để quay lại đúng trang cũ sau khi đăng nhập.
   - **Lớp Backend (Bảo mật cốt lõi):** Tất cả API nhạy cảm được bọc bởi `@login_required` hoặc `@admin_required`. Mọi hành vi cố tình gọi API bằng Postman/cURL mà không có session hợp lệ đều bị từ chối với mã HTTP `401 Unauthorized` hoặc `403 Forbidden`.
-
----
-
-# 🎓 CẨM NANG VẤN ĐÁP ĐỒ ÁN VỚI GIẢNG VIÊN (KIẾN TRÚC SPA & FRONTEND)
-
-> Tài liệu này tổng hợp toàn bộ các câu hỏi giảng viên hay hỏi nhất khi bảo vệ đồ án Web, giải thích cặn kẽ bản chất kỹ thuật phía Frontend để bạn tự tin đạt điểm tối đa!
-
----
-
-## ❓ Câu 1: Em hãy giải thích kiến trúc Single Page Application (SPA) của đồ án và quy định 4 file HTML?
-
-### 🎯 Trả lời:
-- **Bản chất kiến trúc SPA:** Single Page Application là kiến trúc mà toàn bộ website chỉ tải một trang khung (Application Shell) trong lần truy cập đầu tiên. Khi người dùng điều hướng qua lại giữa các chức năng, trình duyệt **không tải lại toàn bộ trang web** (không gửi request yêu cầu file HTML mới), mà JavaScript sẽ chặn sự kiện chuyển trang, gọi API lấy dữ liệu JSON và vẽ lại (render) nội dung vào vùng mount point tương ứng.
-- **Quy định 4 file HTML của dự án:**
-  1. `index.html`: Application Shell cho khách hàng (chứa Header, Search bar, Sub-nav, Footer và vùng `<main id="app">`).
-  2. `admin.html`: Application Shell cho quản trị viên (chứa Sidebar điều hướng, Topbar và vùng `<main id="admin-app">`).
-  3. `login.html`: Giao diện xác thực chung xử lý tab đăng nhập khách hàng, đăng ký khách hàng và đăng nhập quản trị viên.
-  4. `error.html`: Trang hiển thị mã lỗi (404, 500,...) khi người dùng truy cập route không hợp lệ.
-- Toàn bộ các trang nghiệp vụ còn lại đều là các **JavaScript Module** nằm trong thư mục `static/js/pages/` và `static/js/admin/`.
-
----
-
-## ❓ Câu 2: Client-Side Router hoạt động như thế nào qua History API (`pushState` và `popstate`)?
-
-### 🎯 Trả lời & Chỉ code:
-Vị trí: [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js) và [static/js/admin/admin-router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/admin-router.js)
-
-```javascript
-// 1. Chặn hành vi reload mặc định của thẻ <a>
-document.body.addEventListener('click', function(event) {
-    let link = event.target.closest('a');
-    if (!link) return;
-    let href = link.getAttribute('href');
-    if (!href || href.startsWith('http') || href.startsWith('/admin')) return;
-
-    event.preventDefault(); // Ngăn trình duyệt reload
-    navigate(href); // Đổi URL và render module
-});
-
-// 2. Cập nhật URL mà không reload trang qua pushState()
-function navigate(url) {
-    window.history.pushState({}, '', url);
-    let parsedUrl = new URL(url, window.location.origin);
-    handleRoute(parsedUrl.pathname, parsedUrl.searchParams, true);
-}
-
-// 3. Lắng nghe nút Back / Forward của trình duyệt qua sự kiện popstate
-window.addEventListener('popstate', function() {
-    let currentPath = window.location.pathname;
-    let queryParams = new URLSearchParams(window.location.search);
-    handleRoute(currentPath, queryParams, false);
-});
-```
-
-### Điểm cần giải thích cho giảng viên:
-1. **`history.pushState(state, title, url)`:** Thay đổi thanh địa chỉ URL trên trình duyệt mà không kích hoạt tải lại trang web từ server.
-2. **`popstate` event:** Kích hoạt khi người dùng bấm nút Quay lại (Back) hoặc Đi tiếp (Forward) trên trình duyệt, Router sẽ đọc `window.location.pathname` để nạp module tương ứng.
-3. **Direct URL:** Khi người dùng F5 hoặc gõ thẳng link (vd: `/cart`, `/product/2`), Backend Flask sẽ trả về `index.html`, Router JS đọc URL hiện tại và gọi ngay `mount()` của trang đó, đảm bảo hỗ trợ deep-linking 100%.
-
----
-
-## ❓ Câu 3: Quản lý vòng đời (Lifecycle) của một Module giao diện hoạt động ra sao?
-
-### 🎯 Trả lời:
-Vị trí: Mỗi module trong `static/js/pages/` (ví dụ [home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js)) đều triển khai 2 phương thức chuẩn:
-
-1. **`mount(container, params, query)`:**
-   - Được gọi khi Router điều hướng tới trang.
-   - Nhận vào phần tử container DOM (`#app` hoặc `#admin-app`), các tham số URL (`params`) và tham số truy vấn (`query`).
-   - Tạo khung HTML qua Template Literals, gắn các event listener và gọi API lấy dữ liệu.
-2. **`destroy()`:**
-   - Được Router tự động gọi ngay trước khi chuyển sang trang khác:
-   ```javascript
-   if (currentModule && typeof currentModule.destroy === 'function') {
-       currentModule.destroy();
-   }
-   ```
-   - *Ý nghĩa:* Dỡ bỏ toàn bộ `removeEventListener`, hủy các bộ đếm `setTimeout`/`setInterval`, tránh hiện tượng rò rỉ bộ nhớ (Memory Leak) hoặc sự kiện chạy ngầm của trang cũ.
-
----
-
-## ❓ Câu 4: Em hãy giải thích hàm `fetchAPI()` trong file `static/js/api.js` hoạt động như thế nào?
-
-### 🎯 Trả lời & Chỉ code:
-Vị trí: [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js)
-
-```javascript
-async function fetchAPI(url, options = {}) {
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-    };
-
-    const response = await fetch(url, { ...options, headers });
-    const data = await response.json();
-
-    if (!response.ok) {
-        // Tự động bắt mã lỗi xác thực 401 & 403 để chuyển trang đăng nhập
-        if (response.status === 401 && data.require_login) {
-            showToast(data.message || 'Vui lòng đăng nhập', 'warning');
-            setTimeout(() => {
-                window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
-            }, 1000);
-            throw new Error(data.message);
-        }
-        throw new Error(data.message || 'Có lỗi xảy ra, vui lòng thử lại');
-    }
-    return data;
-}
-```
-
-### Điểm kỹ thuật cần giải thích cho giảng viên:
-1. **Async / Await:** Xử lý bất đồng bộ tuần tự, rõ ràng, dễ bảo trì hơn so với callback hoặc `Promise.then()`.
-2. **Xử lý tập trung (Centralized Interceptor):** Tự động thêm header `Content-Type: application/json` và tự động bắt các mã lỗi `401 Unauthorized` hoặc `403 Forbidden` để hiển thị Toast thông báo và chuyển hướng sang trang đăng nhập.
-
----
-
-## ❓ Câu 5: Khi khách hàng bấm "Thêm vào giỏ hàng", luồng chạy Frontend diễn ra như thế nào?
-
-### 🎯 Trả lời theo từng bước:
-Vị trí: [static/js/pages/home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js)
-
-1. **Bắt sự kiện (Event Delegation):** Nút bấm có class `.btn-add-cart` và thuộc tính `data-product-id="1"`. Container lắng nghe sự kiện click và trích xuất ID sản phẩm.
-2. **Gửi request bất đồng bộ:** Gọi `fetchAPI('/api/cart/add', { method: 'POST', body: JSON.stringify({ product_id: id, quantity: 1 }) })`.
-3. **Cập nhật giao diện không tải lại trang:**
-   - Server trả về `total_count` (tổng số lượng hàng trong giỏ).
-   - Gọi `showToast(res.message, 'success')` hiển thị thông báo góc màn hình.
-   - Gọi `updateCartBadge(res.total_count)` để cập nhật con số màu đỏ trên icon Giỏ hàng ở Header:
-   ```javascript
-   function updateCartBadge(count) {
-       const badge = document.getElementById('cartBadgeCount');
-       if (badge) {
-           badge.textContent = count;
-           badge.style.display = count > 0 ? 'inline-block' : 'none';
-       }
-   }
-   ```
-
----
-
-## ❓ Câu 6: Ở trang Quản trị người dùng, làm thế nào Frontend chặn không cho khóa tài khoản Admin ID: 1?
-
-### 🎯 Trả lời:
-Vị trí: [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js)
-
-1. **Tại thời điểm Render bảng (Template Literal):**
-   ```javascript
-   ${u.id !== 1 ? `
-       <button class="btn btn-sm ${u.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'} btn-toggle-lock" 
-               data-id="${u.id}" title="Khóa/Mở khóa">
-           ${u.status === 'active' ? 'Khóa' : 'Mở khóa'}
-       </button>
-   ` : ''}
-   ```
-   Nếu `u.id === 1`, hệ thống **hoàn toàn không sinh ra nút Khóa** trong mã HTML.
-2. **Kiểm tra chặn tại hàm sự kiện:**
-   ```javascript
-   if (userId === 1) {
-       showToast('Không thể khóa tài khoản Quản trị viên tối cao (ID: 1)!', 'error');
-       return;
-   }
-   ```
-3. **Bảo vệ 2 lớp:** Ngay cả khi người dùng cố tình can thiệp gọi API, Backend Flask tại `app.py` cũng đã kiểm tra `if user_id == 1: return jsonify({'success': False, 'message': 'Không được phép khóa tài khoản Quản trị viên tối cao'}), 400`.
-
----
-
-## ❓ Câu 7: Validate dữ liệu ở Client (Frontend) và Server (Backend) khác nhau như thế nào? Tại sao cần cả hai?
-
-### 🎯 Trả lời:
-- **Client-Side Validation (Frontend):**
-  - Kiểm tra độ dài mật khẩu $\ge 6$ ký tự, số điện thoại đúng 10 số, họ tên $\ge 2$ ký tự trước khi gửi request.
-  - *Mục đích:* Phản hồi tức thì cho người dùng, nâng cao trải nghiệm (UX), giảm thiểu request sai định dạng gửi lên server.
-- **Server-Side Validation (Backend):**
-  - Kiểm tra lại toàn bộ dữ liệu trong `app.py` bằng Python regex và truy vấn database (tồn tại username, trùng email/SĐT, số lượng tồn kho thực tế).
-  - *Mục đích:* **Bảo mật tuyệt đối**. Client-side validation có thể bị vượt qua dễ dàng bằng Postman, cURL hoặc tắt JavaScript ở trình duyệt.
-
----
-
-## ❓ Câu 8: Tại sao mã nguồn JavaScript Frontend được viết theo phong cách hàm thuần đơn giản, không dùng Class OOP hay Framework?
-
-### 🎯 Trả lời:
-1. **Dễ đọc, dễ giải thích khi bảo vệ đồ án:** Mã nguồn sử dụng các khái niệm JavaScript nền tảng (`let`, `const`, `function`, `if/else`, vòng lặp `for`, DOM API, Fetch API với `async/await`), giúp sinh viên tự tin giải thích cặn kẽ bản chất luồng dữ liệu mà không bị phụ thuộc vào các thư viện bên thứ ba hay cú pháp che giấu bản chất.
-2. **Hiệu năng cao & Dung lượng nhẹ:** Không phát sinh chi phí trừu tượng (overhead) từ framework lớn như React/Vue, toàn bộ trang web tải cực nhanh và chạy mượt mà ngay cả trên thiết bị cấu hình yếu.
-3. **Tuân thủ tuyệt đối quy định đồ án:** Đảm bảo toàn bộ dự án chỉ có đúng 4 file HTML (`index.html`, `admin.html`, `login.html`, `error.html`), từng chức năng là một module JS độc lập, có hàm `mount()` để khởi tạo và `destroy()` để giải phóng tài nguyên.
-
----
-
-## ❓ Câu 9: Tại sao dự án tách hoàn toàn CSS ra khỏi HTML, không dùng thẻ <style> và thuộc tính style=""?
-
-### 🎯 Trả lời:
-1. **Nguyên lý phân tách mối quan tâm (Separation of Concerns):** HTML chỉ đảm nhận cấu trúc dữ liệu và ngữ nghĩa (Semantic structure), CSS chịu trách nhiệm trình bày giao diện (Presentation & Styling), JavaScript xử lý nghiệp vụ và điều hướng (Behavior). Không trộn lẫn CSS vào HTML giúp mã nguồn trong sáng, dễ đọc và dễ bảo vệ trước hội đồng.
-2. **Khả năng tái sử dụng & Dễ bảo trì:** Định dạng được gom nhóm vào 4 file CSS chuyên biệt (`style.css`, `admin.css`, `login.css`, `components.css`). Khi cần thay đổi thiết kế (ví dụ đổi màu sắc thương hiệu, độ bo góc, khoảng cách), chỉ cần sửa tại một file CSS duy nhất mà không phải rà soát từng dòng HTML.
-3. **Tận dụng bộ nhớ đệm trình duyệt (Browser Caching):** Các file `.css` tĩnh được trình duyệt tải một lần và lưu vào cache. Các lần truy cập tiếp theo hoặc khi chuyển trang trong SPA không làm phát sinh lưu lượng tải lại mã CSS.
-4. **Điều khiển trạng thái giao diện chuẩn mực qua DOM API:** Thay vì can thiệp trực tiếp vào `element.style.display` gây phân mảnh mã nguồn, dự án sử dụng các class trạng thái (`.active`, `.hidden`) kết hợp cùng các phương thức `classList.add()`, `classList.remove()`, `classList.toggle()`, giúp việc debug CSS trực quan qua DevTools.
-
----
-
-## 🛠 BẢNG TRA CỨU "SỬA NHANH TẠI CHỖ" KHI GIẢNG VIÊN YÊU CẦU
-
-Khi vấn đáp, giảng viên thường yêu cầu: *"Em hãy sửa dòng code này xem trang web thay đổi như thế nào?"*. Dưới đây là vị trí chính xác để bạn chỉnh sửa ngay lập tức:
-
-| Giảng viên yêu cầu | Nơi cần mở file | Vị trí cần chỉnh sửa |
-|---|---|---|
-| **Đổi màu chủ đạo website** | [static/css/style.css](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/css/style.css) | Sửa `--primary: #d97706;` ở đầu file thành mã màu khác (vd: `#2563eb` - xanh dương). |
-| **Đổi số lượng sản phẩm mỗi trang** | [static/js/pages/home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js) | Sửa `limit: 8` trong biến `homeFilters` thành `4` hoặc `12`. |
-| **Đổi ngưỡng cảnh báo hết hàng** | [app.py](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/app.py) & [inventory.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/inventory.js) | Tìm số `5` trong `stock_quantity <= 5` đổi thành `10`. |
-| **Thay đổi cách format tiền tệ** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm hàm `formatVND(amount)`, sửa ký hiệu `' ₫'` thành `' VNĐ'`. |
-| **Đổi thời gian tự tắt thông báo** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm `setTimeout(..., 4000)`, đổi `4000` (4s) thành `2000` (2s) hoặc `6000` (6s). |
-| **Thêm cột hiển thị thông tin bảng Admin** | [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js) | Thêm thẻ `<th>` trong `renderUsersShell()` và thêm `<td>${u.ten_thuoc_tinh}</td>` trong hàm `loadUsers()`. |
-| **Đổi đường dẫn điều hướng trang** | [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js) | Thêm hoặc sửa nhánh điều kiện `else if (path.startsWith(...))` trong hàm `handleRoute()`. |
