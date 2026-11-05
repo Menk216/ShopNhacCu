@@ -3,14 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập / Đăng Ký - Melody Store</title>
+    {% if mode == 'admin' %}
+        <title>Đăng Nhập Quản Trị Hệ Thống - Melody Store</title>
+    {% else %}
+        <title>Đăng Nhập / Đăng Ký - Melody Store</title>
+    {% endif %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
 </head>
-<body class="auth-page">
+<body class="auth-page{% if mode == 'admin' %} auth-page-admin{% endif %}">
 
-    <!-- Header Brand -->
+    {% if mode == 'admin' %}
+    <!-- ==================== GIAO DIỆN ĐĂNG NHẬP ADMIN RIÊNG BIỆT ==================== -->
+    <header class="auth-header" style="background: #0f172a; border-bottom: 1px solid #1e293b;">
+        <a href="/" class="brand-logo auth-header-logo" style="color: #ffffff;">
+            <span>MELODY<span class="highlight">STORE</span></span>
+            <span class="auth-admin-badge">ADMIN PORTAL</span>
+        </a>
+        <a href="/" class="btn btn-sm btn-secondary" style="background: #1e293b; color: #f8fafc; border-color: #334155;">&larr; Về trang chủ bán hàng</a>
+    </header>
+
+    <div class="auth-container">
+        <div class="auth-card auth-card-admin">
+            <div class="auth-logo">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #fef3c7; color: #d97706; margin-bottom: 0.75rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h2 class="auth-title">Đăng Nhập Quản Trị Hệ Thống</h2>
+                <p class="auth-subtitle">Cổng quản lý và điều hành dành riêng cho Ban Quản trị</p>
+            </div>
+
+            <div class="auth-admin-note">
+                <strong>Lưu ý bảo mật:</strong> Khu vực chỉ dành cho Quản lý & Nhân viên được phân quyền. Mọi phiên đăng nhập đều được ghi nhận trong nhật ký hệ thống.
+            </div>
+
+            <!-- Admin Login Form (Hiển thị duy nhất, không có tabs) -->
+            <form id="adminLoginForm" class="auth-form active">
+                <div class="form-group auth-form-group-md">
+                    <label for="adminUsername" style="font-weight: 600; color: #0f172a;">Tên đăng nhập Quản trị (*)</label>
+                    <input type="text" id="adminUsername" class="form-control" placeholder="Nhập tài khoản Quản trị (vd: admin)" required autofocus>
+                </div>
+
+                <div class="form-group auth-form-group-lg">
+                    <label for="adminPassword" style="font-weight: 600; color: #0f172a;">Mật khẩu Quản trị (*)</label>
+                    <input type="password" id="adminPassword" class="form-control" placeholder="Nhập mật khẩu Quản trị" required>
+                </div>
+
+                <button type="submit" class="btn-checkout auth-btn-admin">
+                    Đăng Nhập Vào Bảng Điều Khiển &rarr;
+                </button>
+
+                <div style="text-align: center; margin-top: 1.25rem;">
+                    <a href="/" style="color: #64748b; font-size: 0.88rem; text-decoration: none;">&larr; Quay lại trang chủ mua sắm</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="auth-footer" style="color: #94a3b8;">
+        &copy; Melody Store Management System &bull; Bảo mật phân quyền RBAC.
+    </footer>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        // Admin Login Submit
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+
+            try {
+                const res = await fetchAPI('/api/admin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                showToast(res.message, 'success');
+                setTimeout(() => {
+                    window.location.href = '/admin/dashboard';
+                }, 500);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        });
+    </script>
+
+    {% else %}
+    <!-- ==================== GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ KHÁCH HÀNG ==================== -->
     <header class="auth-header">
         <a href="/" class="brand-logo auth-header-logo">
             <span>MELODY<span class="highlight">STORE</span></span>
@@ -22,14 +104,13 @@
         <div class="auth-card">
             <div class="auth-logo">
                 <h2 class="auth-title" id="authHeaderTitle">Chào Mừng Đến Melody Store</h2>
-                <p class="auth-subtitle" id="authHeaderSubtitle">Đăng nhập hoặc đăng ký tài khoản để tiếp tục</p>
+                <p class="auth-subtitle" id="authHeaderSubtitle">Đăng nhập hoặc đăng ký tài khoản mua sắm</p>
             </div>
 
-            <!-- Tabs: Khách hàng Đăng nhập | Đăng ký | Quản trị viên -->
+            <!-- Tabs: Duy nhất 2 tab dành cho Khách hàng: Đăng nhập | Đăng ký -->
             <div class="auth-tabs" id="authTabs">
                 <button type="button" class="auth-tab-btn active" data-tab="login">Đăng Nhập</button>
                 <button type="button" class="auth-tab-btn" data-tab="register">Đăng Ký</button>
-                <button type="button" class="auth-tab-btn" data-tab="admin">Quản Trị Viên</button>
             </div>
 
             <!-- 1. Customer Login Form -->
@@ -82,30 +163,11 @@
 
                 <button type="submit" class="btn-checkout auth-btn-submit">Hoàn Tất Đăng Ký</button>
             </form>
-
-            <!-- 3. Admin Login Form -->
-            <form id="adminLoginForm" class="auth-form">
-                <div class="auth-admin-note">
-                    Dành riêng cho Quản lý & Chủ cửa hàng Melody Store.
-                </div>
-
-                <div class="form-group auth-form-group-md">
-                    <label for="adminUsername">Tên đăng nhập Quản trị (*)</label>
-                    <input type="text" id="adminUsername" class="form-control" placeholder="Tài khoản Quản trị viên" required>
-                </div>
-
-                <div class="form-group auth-form-group-lg">
-                    <label for="adminPassword">Mật khẩu Quản trị (*)</label>
-                    <input type="password" id="adminPassword" class="form-control" placeholder="Mật khẩu Quản trị" required>
-                </div>
-
-                <button type="submit" class="btn-checkout auth-btn-admin">Đăng Nhập Quản Trị Hệ Thống</button>
-            </form>
         </div>
     </div>
 
     <footer class="auth-footer">
-        &copy; Melody Store - Hệ thống phân phối nhạc cụ chính hãng.
+        &copy; Melody Store - Hệ thống phân phối nhạc cụ chính hãng toàn quốc.
     </footer>
 
     <script src="/static/js/api.js"></script>
@@ -113,7 +175,6 @@
         function switchTab(tab) {
             const loginForm = document.getElementById('customerLoginForm');
             const regForm = document.getElementById('customerRegisterForm');
-            const adminForm = document.getElementById('adminLoginForm');
             const title = document.getElementById('authHeaderTitle');
             const subtitle = document.getElementById('authHeaderSubtitle');
 
@@ -123,14 +184,10 @@
 
             if (loginForm) loginForm.classList.toggle('active', tab === 'login');
             if (regForm) regForm.classList.toggle('active', tab === 'register');
-            if (adminForm) adminForm.classList.toggle('active', tab === 'admin');
 
-            if (tab === 'admin') {
-                title.textContent = 'Quản Trị Hệ Thống';
-                subtitle.textContent = 'Đăng nhập dành cho Quản lý & Nhân viên quản trị';
-            } else if (tab === 'register') {
+            if (tab === 'register') {
                 title.textContent = 'Đăng Ký Tài Khoản';
-                subtitle.textContent = 'Tạo tài khoản để đặt hàng và theo dõi bảo hành nhanh chóng';
+                subtitle.textContent = 'Tạo tài khoản để đặt hàng và theo dõi đơn hàng nhanh chóng';
             } else {
                 title.textContent = 'Đăng Nhập Khách Hàng';
                 subtitle.textContent = 'Đăng nhập tài khoản để tiếp tục mua sắm';
@@ -147,9 +204,7 @@
         // Initialize active tab based on URL path or parameters
         const path = window.location.pathname;
         const params = new URLSearchParams(window.location.search);
-        if (path === '/admin/login' || params.get('role') === 'admin' || params.get('mode') === 'admin') {
-            switchTab('admin');
-        } else if (path === '/register' || params.get('tab') === 'register') {
+        if (path === '/register' || params.get('tab') === 'register') {
             switchTab('register');
         } else {
             switchTab('login');
@@ -224,26 +279,8 @@
                 showToast(err.message, 'error');
             }
         });
-
-        // Admin Login Submit
-        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('adminUsername').value.trim();
-            const password = document.getElementById('adminPassword').value.trim();
-
-            try {
-                const res = await fetchAPI('/api/admin/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password })
-                });
-                showToast(res.message, 'success');
-                setTimeout(() => {
-                    window.location.href = '/admin/dashboard';
-                }, 500);
-            } catch (err) {
-                showToast(err.message, 'error');
-            }
-        });
     </script>
+    {% endif %}
+
 </body>
 </html>
