@@ -117,6 +117,10 @@ class MusicStoreTestCase(unittest.TestCase):
         self.assertTrue(c_data['success'])
         self.assertGreater(len(c_data['cart_items']), 0)
 
+        # Get product 1 stock before checkout
+        prod_before = json.loads(self.app.get('/api/products/1').data)['product']
+        stock_before = prod_before['stock_quantity']
+
         # Checkout using profile address
         checkout_res = self.app.post('/api/checkout', json={
             'address_mode': 'profile',
@@ -127,12 +131,35 @@ class MusicStoreTestCase(unittest.TestCase):
         chk_data = json.loads(checkout_res.data)
         self.assertTrue(chk_data['success'])
         self.assertIn('DH-', chk_data['order_code'])
+        order_id = chk_data['order_id']
 
-        # Customer orders list
+        # Stock should NOT be deducted upon checkout when status is pending
+        prod_after_checkout = json.loads(self.app.get('/api/products/1').data)['product']
+        self.assertEqual(prod_after_checkout['stock_quantity'], stock_before)
+
+        # Customer orders list & check timestamp format
         orders_res = self.app.get('/api/orders')
         o_data = json.loads(orders_res.data)
         self.assertTrue(o_data['success'])
         self.assertGreater(len(o_data['orders']), 0)
+        latest_order = o_data['orders'][0]
+        self.assertEqual(latest_order['order_status'], 'pending')
+        # Ensure timestamp is full datetime YYYY-MM-DD HH:MM:SS
+        import re
+        self.assertTrue(re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', latest_order['created_at']))
+
+        # Admin logs in and confirms delivery (status = 'delivered') -> Stock IS deducted
+        self.app.post('/api/admin/login', json={'username': 'admin', 'password': 'admin123'})
+        deliv_res = self.app.put(f'/api/admin/orders/{order_id}/status', json={'order_status': 'delivered'})
+        self.assertEqual(deliv_res.status_code, 200)
+        prod_after_deliv = json.loads(self.app.get('/api/products/1').data)['product']
+        self.assertEqual(prod_after_deliv['stock_quantity'], stock_before - 2)
+
+        # Admin cancels delivered order -> Stock IS restored
+        cancel_res = self.app.put(f'/api/admin/orders/{order_id}/status', json={'order_status': 'cancelled'})
+        self.assertEqual(cancel_res.status_code, 200)
+        prod_after_cancel = json.loads(self.app.get('/api/products/1').data)['product']
+        self.assertEqual(prod_after_cancel['stock_quantity'], stock_before)
 
     # ---------------- 4. Admin Management Flows ----------------
     def test_05_admin_operations(self):
