@@ -1,9 +1,15 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, g
 from werkzeug.security import generate_password_hash, check_password_hash
 import database
+
+# Múi giờ chuẩn Việt Nam (UTC+7): Giữ đúng thời gian thực tế khi chạy Local lẫn khi Deploy Render/Cloud (máy chủ chạy múi giờ UTC/GMT+0)
+VN_TZ = timezone(timedelta(hours=7))
+
+def get_vietnam_now():
+    return datetime.now(VN_TZ)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -77,7 +83,7 @@ def inject_global_vars():
         'current_admin': g.admin,
         'nav_categories': [dict(c) for c in categories],
         'cart_count': cart_count,
-        'now_year': datetime.now().year
+        'now_year': get_vietnam_now().year
     }
 
 # ----------------- Customer Page Routes -----------------
@@ -242,7 +248,7 @@ def api_register():
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO users (username, password_hash, full_name, email, phone, address, role, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'customer', 'active', datetime('now', 'localtime'))
+        VALUES (?, ?, ?, ?, ?, ?, 'customer', 'active', datetime('now', '+7 hours'))
     ''', (username, password_hash, full_name, email, phone, address))
     user_id = cursor.lastrowid
     conn.commit()
@@ -533,7 +539,7 @@ def api_cart_add():
     if existing:
         conn.execute("UPDATE cart_items SET quantity = ? WHERE id = ?", (new_qty, existing['id']))
     else:
-        conn.execute("INSERT INTO cart_items (user_id, product_id, quantity, created_at) VALUES (?, ?, ?, datetime('now', 'localtime'))", (g.user['id'], product_id, quantity))
+        conn.execute("INSERT INTO cart_items (user_id, product_id, quantity, created_at) VALUES (?, ?, ?, datetime('now', '+7 hours'))", (g.user['id'], product_id, quantity))
 
     conn.commit()
 
@@ -647,7 +653,7 @@ def api_checkout():
             'subtotal': subtotal
         })
 
-    now_dt = datetime.now()
+    now_dt = get_vietnam_now()
     created_at = now_dt.strftime('%Y-%m-%d %H:%M:%S')
     order_code = f"DH-{now_dt.strftime('%Y%m%d%H%M%S')}-{g.user['id']}"
     payment_status = 'paid' if payment_method == 'online' else 'unpaid'
@@ -859,7 +865,7 @@ def api_admin_create_admin():
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO users (username, password_hash, full_name, email, phone, role, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 'admin', 'active', datetime('now', 'localtime'))
+        VALUES (?, ?, ?, ?, ?, 'admin', 'active', datetime('now', '+7 hours'))
     ''', (username, password_hash, full_name, email, phone))
     conn.commit()
     conn.close()
@@ -979,7 +985,7 @@ def api_admin_categories():
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO categories (code, name, description, status, profit_margin_percent, created_at)
-        VALUES (?, ?, ?, 'active', ?, datetime('now', 'localtime'))
+        VALUES (?, ?, ?, 'active', ?, datetime('now', '+7 hours'))
     ''', (code, name, description, profit_margin))
     cat_id = cursor.lastrowid
     conn.commit()
@@ -1107,7 +1113,7 @@ def api_admin_products():
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO products (category_id, code, name, image_url, description, cost_price, profit_margin_percent, status, stock_quantity, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, datetime('now', 'localtime'))
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, datetime('now', '+7 hours'))
     ''', (category_id, code, name, image_url, description, cost_price, profit_margin))
     new_id = cursor.lastrowid
     conn.commit()
@@ -1244,7 +1250,7 @@ def api_admin_imports():
 
     # POST: create import receipt
     data = request.get_json() or {}
-    import_date = data.get('import_date', datetime.now().strftime('%Y-%m-%d'))
+    import_date = data.get('import_date', get_vietnam_now().strftime('%Y-%m-%d'))
     notes = data.get('notes', '').strip()
     items = data.get('items', [])
 
@@ -1252,13 +1258,13 @@ def api_admin_imports():
         conn.close()
         return jsonify({'success': False, 'message': 'Phiếu nhập phải có ít nhất 1 sản phẩm'}), 400
 
-    receipt_code = f"PN-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    receipt_code = f"PN-{get_vietnam_now().strftime('%Y%m%d%H%M%S')}"
     total_cost = sum(float(i.get('import_price', 0)) * int(i.get('quantity', 0)) for i in items)
 
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO import_receipts (receipt_code, import_date, status, total_cost, notes, created_at)
-        VALUES (?, ?, 'draft', ?, ?, datetime('now', 'localtime'))
+        VALUES (?, ?, 'draft', ?, ?, datetime('now', '+7 hours'))
     ''', (receipt_code, import_date, total_cost, notes))
     receipt_id = cursor.lastrowid
 
@@ -1680,9 +1686,9 @@ def api_admin_inventory_report():
 
     # Defaults: current month if not specified
     if not from_date:
-        from_date = datetime.now().strftime('%Y-%m-01')
+        from_date = get_vietnam_now().strftime('%Y-%m-01')
     if not to_date:
-        to_date = datetime.now().strftime('%Y-%m-%d')
+        to_date = get_vietnam_now().strftime('%Y-%m-%d')
 
     conn = database.get_db_connection()
 
