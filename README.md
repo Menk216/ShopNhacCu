@@ -318,3 +318,172 @@ sequenceDiagram
 - **Bảo mật 2 lớp:**
   - **Lớp Frontend (UX):** Kiểm tra trạng thái người dùng trong `window.__APP_INITIAL_STATE__`. Nếu chưa đăng nhập, tự động chuyển hướng sang trang đăng nhập kèm tham số `?next=...` để quay lại đúng trang cũ sau khi đăng nhập.
   - **Lớp Backend (Bảo mật cốt lõi):** Tất cả API nhạy cảm được bọc bởi `@login_required` hoặc `@admin_required`. Mọi hành vi cố tình gọi API bằng Postman/cURL mà không có session hợp lệ đều bị từ chối với mã HTTP `401 Unauthorized` hoặc `403 Forbidden`.
+
+---
+
+# 🎓 CẨM NANG VẤN ĐÁP ĐỒ ÁN VỚI GIẢNG VIÊN (KIẾN TRÚC SPA & FRONTEND)
+
+> Tài liệu này tổng hợp toàn bộ các câu hỏi giảng viên hay hỏi nhất khi bảo vệ đồ án Web, giải thích cặn kẽ bản chất kỹ thuật phía Frontend để bạn tự tin đạt điểm tối đa!
+
+---
+
+## ❓ Câu 1: Em hãy giải thích kiến trúc Single Page Application (SPA) của đồ án và quy định 4 file HTML?
+
+### 🎯 Trả lời:
+- **Bản chất kiến trúc SPA:** Single Page Application là kiến trúc mà toàn bộ website chỉ tải một trang khung (Application Shell) trong lần truy cập đầu tiên. Khi người dùng điều hướng qua lại giữa các chức năng, trình duyệt **không tải lại toàn bộ trang web** (không gửi request yêu cầu file HTML mới lên server). Thay vào đó, JavaScript sẽ chặn sự kiện chuyển trang, cập nhật thanh địa chỉ URL bằng HTML5 History API (`pushState`) và tự động nạp dữ liệu JSON qua RESTful API để render giao diện vào vùng chứa `<main id="app">`.
+- **4 file HTML duy nhất:**
+  1. `index.html`: Application Shell cho khách hàng (Header, Thanh tìm kiếm, Menu danh mục, Badge giỏ hàng, Footer và vùng mount `<main id="app">`).
+  2. `admin.html`: Application Shell cho quản trị viên (Sidebar, Topbar, thông tin admin và vùng mount `<main id="admin-app">`).
+  3. `login.html`: Giao diện Xác thực phân tách theo vai trò: Khách hàng (2 tabs Đăng nhập / Đăng ký) & Quản trị viên (`/admin/login`).
+  4. `error.html`: Giao diện thông báo lỗi HTTP chung (404 Not Found, 500 Server Error).
+- **Tuyệt đối không có file HTML thứ 5:** Mọi trang chức năng (Chi tiết sản phẩm, Giỏ hàng, Thanh toán, Lịch sử đơn hàng, Hồ sơ cá nhân, Dashboard quản trị, Quản lý kho,...) đều được tách thành các ES6 Module JavaScript riêng biệt (`home.js`, `product.js`, `cart.js`,...) và sinh mã HTML động qua Template Literals.
+
+---
+
+## ❓ Câu 2: Trình duyệt chuyển trang mà không reload như thế nào? Giải thích chi tiết router.js?
+
+### 🎯 Trả lời:
+Vị trí: [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js)
+
+```javascript
+// 1. Chặn hành vi reload mặc định của thẻ <a>
+document.body.addEventListener('click', function(event) {
+    let link = event.target.closest('a');
+    if (!link) return;
+    let href = link.getAttribute('href');
+    if (!href || href.startsWith('http') || href.startsWith('/admin')) return;
+
+    event.preventDefault(); // Ngăn trình duyệt reload
+    navigate(href); // Đổi URL và render module
+});
+
+// 2. Cập nhật URL mà không reload trang qua pushState()
+function navigate(url) {
+    window.history.pushState({}, '', url);
+    let parsedUrl = new URL(url, window.location.origin);
+    handleRoute(parsedUrl.pathname, parsedUrl.searchParams, true);
+}
+
+// 3. Lắng nghe nút Back / Forward của trình duyệt qua sự kiện popstate
+window.addEventListener('popstate', function() {
+    let currentPath = window.location.pathname;
+    let queryParams = new URLSearchParams(window.location.search);
+    handleRoute(currentPath, queryParams, false);
+});
+```
+
+- **Hỗ trợ URL trực tiếp (Direct URL Refresh):** Khi người dùng F5 hoặc gõ thẳng link (vd: `/product/15`), Flask Server tại `app.py` bắt route này và trả về `index.html`. Sau đó `router.js` được nạp, đọc `window.location.pathname` và tự động kích hoạt `product.js` nạp đúng sản phẩm đó.
+
+---
+
+## ❓ Câu 3: Vòng đời của một trang (Component Lifecycle) hoạt động ra sao? Ý nghĩa của mount() và destroy()?
+
+### 🎯 Trả lời:
+Vị trí: Mỗi module trong `static/js/pages/` (ví dụ [home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js), [cart.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/cart.js))
+
+1. **`mount(container, params)`:**
+   - Được Router gọi khi người dùng mở trang.
+   - Nhận vào phần tử DOM cha `container` (`<main id="app">`).
+   - Thiết lập `document.title`, render khung HTML ban đầu kèm Skeleton/Loading spinner.
+   - Gọi Fetch API lấy dữ liệu JSON, sau đó gán sự kiện (`addEventListener`) cho các nút bấm.
+2. **`destroy()`:**
+   - Được Router tự động gọi ngay trước khi chuyển sang trang khác:
+   ```javascript
+   if (currentModule && typeof currentModule.destroy === 'function') {
+       currentModule.destroy();
+   }
+   ```
+   - *Ý nghĩa:* Dỡ bỏ toàn bộ `removeEventListener`, hủy các bộ đếm `setTimeout`/`setInterval`, tránh hiện tượng rò rỉ bộ nhớ (Memory Leak) hoặc sự kiện chạy ngầm của trang cũ.
+
+---
+
+## ❓ Câu 4: Dữ liệu giỏ hàng được quản lý và đồng bộ như thế nào?
+
+### 🎯 Trả lời:
+Vị trí: [static/js/pages/cart.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/cart.js) & [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js)
+
+- **Cơ chế 2 lớp (Hybrid Cart):**
+  1. **Khách vãng lai (Chưa đăng nhập):** Giỏ hàng được lưu trữ dưới dạng mảng JSON trong `localStorage.getItem('cart')`. Giúp khách hàng thoải mái chọn hàng mà không bị bắt buộc đăng nhập ngay.
+  2. **Khách đã đăng nhập:** Khi thêm vào giỏ, hệ thống vừa lưu LocalStorage vừa gọi POST `/api/cart` để lưu vào bảng `cart_items` trong database.
+  3. **Đồng bộ khi đăng nhập (Merge Cart):** Ngay khi khách đăng nhập thành công, hệ thống đọc các món trong `localStorage` và đồng bộ lên server, bảo toàn các món hàng khách vừa chọn.
+- **Đồng bộ Badge giỏ hàng tức thì:** Hàm toàn cục `window.updateCartBadge(count)` được gọi mỗi khi thêm/xóa/sửa số lượng, cập nhật ngay con số hiển thị trên Header mà không cần tải lại trang.
+
+---
+
+## ❓ Câu 5: Công thức định giá bán tự động và quy trình Nhập kho diễn ra như thế nào?
+
+### 🎯 Trả lời:
+Vị trí: [database.py](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/database.py) & [static/js/admin/imports.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/imports.js), [pricing.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/pricing.js)
+
+1. **Quy trình Nhập kho 2 bước chuẩn ERP:**
+   - **Bước 1 (Lưu nháp):** Tạo phiếu nhập với nhiều mặt hàng, số lượng và đơn giá nhập. Phiếu ở trạng thái `draft`, số lượng tồn kho của sản phẩm **chưa tăng**, cho phép nhân viên rà soát, chỉnh sửa số liệu.
+   - **Bước 2 (Hoàn thành phiếu):** Bấm "Hoàn thành", trạng thái chuyển thành `completed`. Hệ thống bắt đầu Transaction trong SQLite:
+     - Cộng dồn số lượng nhập vào `stock_quantity`.
+     - Cập nhật `latest_cost_price` (giá vốn gần nhất).
+     - **Tự động kích hoạt tính lại giá bán** cho sản phẩm theo công thức định giá.
+2. **Công thức định giá tự động:**
+   $$	ext{Giá bán} = 	ext{Giá nhập gần nhất} 	imes \left(1 + rac{\%	ext{ Lợi nhuận định mức của Loại}}{100}ight)$$
+   - Ví dụ: Đàn Guitar nhập vào $10.000.000$ đ, % lãi định mức là $25\% ightarrow 	ext{Giá bán} = 10.000.000 	imes 1.25 = 12.500.000$ đ.
+   - Khi quản trị viên thay đổi % lãi của loại Đàn Guitar từ $25\% ightarrow 30\%$, toàn bộ đàn Guitar trong cửa hàng tự động đổi giá bán mà không cần sửa thủ công từng sản phẩm.
+
+---
+
+## ❓ Câu 6: Làm thế nào để ngăn chặn hành vi tự xóa hoặc tự khóa tài khoản Admin tối cao?
+
+### 🎯 Trả lời:
+Vị trí: [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js) & [app.py](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/app.py)
+
+1. **Tài khoản Root (ID = 1):** Tài khoản quản trị khởi tạo mặc định (`admin`) có ID cố định là `1`.
+2. **Ẩn nút thao tác ở Frontend:** Trong vòng lặp render danh sách người dùng, nếu `u.id === 1`, hệ thống không tạo nút "Khóa tài khoản" hoặc "Xóa", thay bằng huy hiệu `[Quản trị tối cao]`.
+3. **Bảo vệ 2 lớp ở Backend:** Ngay cả khi người dùng cố tình can thiệp gọi API, Backend Flask tại `app.py` kiểm tra:
+   ```python
+   if user_id == 1:
+       return jsonify({'success': False, 'message': 'Không được phép khóa tài khoản Quản trị viên tối cao'}), 400
+   ```
+
+---
+
+## ❓ Câu 7: Validate dữ liệu ở Client (Frontend) và Server (Backend) khác nhau như thế nào? Tại sao cần cả hai?
+
+### 🎯 Trả lời:
+- **Client-Side Validation (Frontend):**
+  - Kiểm tra độ dài mật khẩu $\ge 6$ ký tự, số điện thoại đúng 10 số, họ tên $\ge 2$ ký tự trước khi gửi request.
+  - *Mục đích:* Phản hồi tức thì cho người dùng, nâng cao trải nghiệm (UX), giảm thiểu request sai định dạng gửi lên server.
+- **Server-Side Validation (Backend):**
+  - Kiểm tra lại toàn bộ dữ liệu trong `app.py` bằng Python regex và truy vấn database (tồn tại username, trùng email/SĐT, số lượng tồn kho thực tế).
+  - *Mục đích:* **Bảo mật tuyệt đối**. Client-side validation có thể bị vượt qua dễ dàng bằng Postman, cURL hoặc tắt JavaScript ở trình duyệt.
+
+---
+
+## ❓ Câu 8: Tại sao mã nguồn JavaScript Frontend được viết theo phong cách hàm thuần đơn giản, không dùng Class OOP hay Framework?
+
+### 🎯 Trả lời:
+1. **Dễ đọc, dễ giải thích khi bảo vệ đồ án:** Mã nguồn sử dụng các khái niệm JavaScript nền tảng (`let`, `const`, `function`, `if/else`, vòng lặp `for`, DOM API, Fetch API với `async/await`), giúp sinh viên tự tin giải thích cặn kẽ bản chất luồng dữ liệu mà không bị phụ thuộc vào các thư viện bên thứ ba hay cú pháp che giấu bản chất.
+2. **Hiệu năng cao & Dung lượng nhẹ:** Không phát sinh chi phí trừu tượng (overhead) từ framework lớn như React/Vue, toàn bộ trang web tải cực nhanh và chạy mượt mà ngay cả trên thiết bị cấu hình yếu.
+3. **Tuân thủ tuyệt đối quy định đồ án:** Đảm bảo toàn bộ dự án chỉ có đúng 4 file HTML (`index.html`, `admin.html`, `login.html`, `error.html`), từng chức năng là một module JS độc lập, có hàm `mount()` để khởi tạo và `destroy()` để giải phóng tài nguyên.
+
+---
+
+## ❓ Câu 9: Tại sao dự án tách hoàn toàn CSS ra khỏi HTML, không dùng thẻ <style> và thuộc tính style=""?
+
+### 🎯 Trả lời:
+1. **Nguyên lý phân tách mối quan tâm (Separation of Concerns):** HTML chỉ đảm nhận cấu trúc dữ liệu và ngữ nghĩa (Semantic structure), CSS chịu trách nhiệm trình bày giao diện (Presentation & Styling), JavaScript xử lý nghiệp vụ và điều hướng (Behavior). Không trộn lẫn CSS vào HTML giúp mã nguồn trong sáng, dễ đọc và dễ bảo vệ trước hội đồng.
+2. **Khả năng tái sử dụng & Dễ bảo trì:** Định dạng được gom nhóm vào 4 file CSS chuyên biệt (`style.css`, `admin.css`, `login.css`, `components.css`). Khi cần thay đổi thiết kế (ví dụ đổi màu sắc thương hiệu, độ bo góc, khoảng cách), chỉ cần sửa tại một file CSS duy nhất mà không phải rà soát từng dòng HTML.
+3. **Tận dụng bộ nhớ đệm trình duyệt (Browser Caching):** Các file `.css` tĩnh được trình duyệt tải một lần và lưu vào cache. Các lần truy cập tiếp theo hoặc khi chuyển trang trong SPA không làm phát sinh lưu lượng tải lại mã CSS.
+4. **Điều khiển trạng thái giao diện chuẩn mực qua DOM API:** Thay vì can thiệp trực tiếp vào `element.style.display` gây phân mảnh mã nguồn, dự án sử dụng các class trạng thái (`.active`, `.hidden`) kết hợp cùng các phương thức `classList.add()`, `classList.remove()`, `classList.toggle()`, giúp việc debug CSS trực quan qua DevTools.
+
+---
+
+## 🛠 BẢNG TRA CỨU "SỬA NHANH TẠI CHỖ" KHI GIẢNG VIÊN YÊU CẦU
+
+Khi vấn đáp, giảng viên thường yêu cầu: *"Em hãy sửa dòng code này xem trang web thay đổi như thế nào?"*. Dưới đây là vị trí chính xác để bạn chỉnh sửa ngay lập tức:
+
+| Giảng viên yêu cầu | Nơi cần mở file | Vị trí cần chỉnh sửa |
+|---|---|---|
+| **Đổi màu chủ đạo website** | [static/css/style.css](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/css/style.css) | Sửa `--primary: #d97706;` ở đầu file thành mã màu khác (vd: `#2563eb` - xanh dương). |
+| **Đổi số lượng sản phẩm mỗi trang** | [static/js/pages/home.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/pages/home.js) | Sửa `limit: 8` trong biến `homeFilters` thành `4` hoặc `12`. |
+| **Đổi ngưỡng cảnh báo hết hàng** | [app.py](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/app.py) & [inventory.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/inventory.js) | Tìm số `5` trong `stock_quantity <= 5` đổi thành `10`. |
+| **Thay đổi cách format tiền tệ** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm hàm `formatVND(amount)`, sửa ký hiệu `' ₫'` thành `' VNĐ'`. |
+| **Đổi thời gian tự tắt thông báo** | [static/js/api.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/api.js) | Tìm `setTimeout(..., 4000)`, đổi `4000` (4s) thành `2000` (2s) hoặc `6000` (6s). |
+| **Thêm cột hiển thị thông tin bảng Admin** | [static/js/admin/users.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/admin/users.js) | Thêm thẻ `<th>` trong `renderUsersShell()` và thêm `<td>${u.ten_thuoc_tinh}</td>` trong hàm `loadUsers()`. |
+| **Đổi đường dẫn điều hướng trang** | [static/js/router.js](file:///c:/Users/Admin/OneDrive/Desktop/DAWEB1/static/js/router.js) | Thêm hoặc sửa nhánh điều kiện `else if (path.startsWith(...))` trong hàm `handleRoute()`. |
