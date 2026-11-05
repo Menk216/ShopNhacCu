@@ -6,7 +6,6 @@ echo ===================================================
 echo.
 echo Đang kiểm tra thư viện và khởi tạo cơ sở dữ liệu...
 python -m pip install -r requirements.txt
-python seed_data.py
 echo.
 echo ===================================================
 echo   Máy chủ đang chạy tại: http://127.0.0.1:5000
